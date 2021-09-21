@@ -32,6 +32,11 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , beam-core
+    , beam-migrate
+    , beam-sqlite
+    , sqlite-simple
+    , text
   default-language: Haskell2010
 
 executable test-beam-exe
@@ -43,7 +48,12 @@ executable test-beam-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , beam-core
+    , beam-migrate
+    , beam-sqlite
+    , sqlite-simple
     , test-beam
+    , text
   default-language: Haskell2010
 
 test-suite test-beam-test
@@ -56,5 +66,10 @@ test-suite test-beam-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , beam-core
+    , beam-migrate
+    , beam-sqlite
+    , sqlite-simple
     , test-beam
+    , text
   default-language: Haskell2010
