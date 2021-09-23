@@ -17,6 +17,9 @@ import Data.Text (Text)
 
 import Database.SQLite.Simple
 
+-- for debugging
+import Data.Typeable
+
 
 -- sample thing to play around with
 -- let range = [0,4..1000] in map (\(x, y) -> y) (filter (\(x, y) -> x) (zip (map isLeapYear range) range))
@@ -169,33 +172,34 @@ ShoppingCartDb
   (TableLens shoppingCartUserAddresses)
   = dbLenses
 
+-- see: https://github.com/haskell-beam/beam/issues/337#issuecomment-575249344
 insertNewUsers = runDebugInDb $
   let james     = User "james@example.com" "James" "Smith" "b4cc344d25a2efe540adbf2678e2304c"
       betty     = User "betty@example.com" "Betty" "Jones" "82b054bd83ffad9b6cf8bdb98ce3cc2f"
       sam       = User "sam@example.com" "Sam" "Taylor" "332532dcfaa1cbf61e2a266bd723612c"
-      -- jamesAddr = Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (pk james)
-      -- bettyAddr = Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (pk betty)
-      -- samAddr   = Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (pk betty)
-  in (runInsert $ insert (_shoppingCartUsers shoppingCartDb) $ insertValues [ james, betty, sam ])
-     -- (runInsert $ insert (_shoppingCartUserAddresses shoppingCartDb) $ insertExpressions [ jamesAddr, bettyAddr, samAddr ])
-
--- see: https://github.com/haskell-beam/beam/issues/337#issuecomment-575249344
-test =
-  let james     = User "james@example.com" "James" "Smith" "b4cc344d25a2efe540adbf2678e2304c"
-      betty     = User "betty@example.com" "Betty" "Jones" "82b054bd83ffad9b6cf8bdb98ce3cc2f"
-      -- addresses = [ Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (val_ (pk james))
-      --             , Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (val_ (pk betty))
-      --             , Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (val_ (pk betty)) ]
-      --             :: [AddressT (QExpr Sqlite s)]
-  in runDebugInDb $
-     runInsert $
-     insert (_shoppingCartUserAddresses shoppingCartDb) $
-     -- insertExpressions addresses
-     insertExpressions [ Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (val_ (pk james))
-                       , Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (val_ (pk betty))
-                       , Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (val_ (pk betty)) ]
-
--- runBeamSqliteDebug putStrLn conn $ runInsert $
---   insert (_shoppingCartUserAddresses shoppingCartDb) $
---   insertExpressions addresses
-
+  in (runInsert $ insert (_shoppingCartUsers shoppingCartDb) $ insertValues [ james, betty, sam ]) >>
+     (runInsert $ insert (_shoppingCartUserAddresses shoppingCartDb) $ insertExpressions
+       [ Address
+         default_
+         (val_ "123 Little Street")
+         (val_ Nothing)
+         (val_ "Boston")
+         (val_ "MA")
+         (val_ "12345")
+         (val_ (pk james))
+       , Address
+         default_
+         (val_ "222 Main Street")
+         (val_ (Just "Ste 1"))
+         (val_ "Houston")
+         (val_ "TX")
+         (val_ "8888")
+         (val_ (pk betty))
+       , Address
+         default_
+         (val_ "9999 Residence Ave")
+         (val_ Nothing)
+         (val_ "Sugarland")
+         (val_ "TX")
+         (val_ "8989")
+         (val_ (pk betty)) ])
