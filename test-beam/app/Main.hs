@@ -1,7 +1,9 @@
-{-# LANGUAGE DeriveGeneric, GADTs, OverloadedStrings, FlexibleContexts, FlexibleInstances, TypeFamilies, TypeApplications, DeriveAnyClass, StandaloneDeriving, TypeSynonymInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, GADTs, OverloadedStrings, FlexibleContexts, FlexibleInstances, TypeFamilies, TypeApplications, DeriveAnyClass, StandaloneDeriving, TypeSynonymInstances, MultiParamTypeClasses, ImpredicativeTypes #-}
 
 -- haskell keybindings (make sure to turn on haskell-indent-mode)
 -- https://wiki.haskell.org/Emacs/Keybindings_and_simple_usage
+
+-- TODO: look at structured haskell mode
 
 module Main where
 
@@ -23,12 +25,11 @@ main :: IO ()
 main = someFunc
 
 data UserT f = User
-    {
-      _userEmail     :: Columnar f Text,
-      _userFirstName :: Columnar f Text,
-      _userLastName  :: Columnar f Text,
-      _userPassword  :: Columnar f Text
-    } deriving Generic
+  { _userEmail     :: Columnar f Text
+  , _userFirstName :: Columnar f Text
+  , _userLastName  :: Columnar f Text
+  , _userPassword  :: Columnar f Text }
+  deriving Generic
 
 type User   = UserT Identity
 type UserId = PrimaryKey UserT Identity
@@ -43,11 +44,21 @@ instance Table UserT where
     primaryKey              = UserId . _userEmail
 
 data ShoppingCartDb f = ShoppingCartDb
-                      { _shoppingCartUsers :: f (TableEntity UserT) }
-                      deriving (Generic, Database be)
+  { _shoppingCartUsers         :: f (TableEntity UserT)
+  , _shoppingCartUserAddresses :: f (TableEntity AddressT) }
+  deriving (Generic, Database be)
 
+-- shoppingCartDb :: DatabaseSettings be ShoppingCartDb
+-- shoppingCartDb = defaultDbSettings
+
+-- renaming the addresses table
 shoppingCartDb :: DatabaseSettings be ShoppingCartDb
-shoppingCartDb = defaultDbSettings
+shoppingCartDb = defaultDbSettings `withDbModification` dbModification
+  { _shoppingCartUserAddresses = setEntityName "addresses" <>
+    modifyTableFields tableModification
+    { _addressLine1   = fieldNamed "address1"
+    , _addressLine2   = fieldNamed "address2"
+    , _addressForUser = UserId (fieldNamed "user") } }
 
 getDb = open "shoppingcart1.db"
 runDebug conn = runBeamSqliteDebug putStr conn
@@ -106,7 +117,7 @@ showUserCount = runDebugInDb $ do c <- runSelectReturningOne $
                                   liftIO $ putStrLn ("We have " ++ show c ++ " users in the db.")
 
 deleteUsers = runDebugInDb $ do runDelete $
-                                  delete userTable (\u -> val_ True);
+                                  delete userTable (\u -> val_ True)
 
 aggregateSelect = runDebugInDb $
   do countedByName <- runSelectReturningList $
@@ -114,3 +125,77 @@ aggregateSelect = runDebugInDb $
        aggregate_ (\u -> (group_ (_userFirstName u), as_ @Int32 countAll_)) $
        all_ userTable
      mapM_ (liftIO . putStrLn . show) countedByName
+
+data AddressT f = Address
+  { _addressId      :: C f Int32
+  , _addressLine1   :: C f Text
+  , _addressLine2   :: C f (Maybe Text)
+  , _addressCity    :: C f Text
+  , _addressState   :: C f Text
+  , _addressZip     :: C f Text
+  , _addressForUser :: PrimaryKey UserT f }
+  deriving (Generic, Beamable)
+
+type Address = AddressT Identity
+
+deriving instance Show (PrimaryKey UserT Identity)
+deriving instance Show Address
+
+instance Table AddressT where
+  data PrimaryKey AddressT f = AddressId (C f Int32) deriving (Generic, Beamable)
+  primaryKey = AddressId . _addressId
+
+type AddressId = PrimaryKey AddressT Identity
+
+Address
+  (LensFor addressId)
+  (LensFor addressLine1)
+  (LensFor addressLine2)
+  (LensFor addressCity)
+  (LensFor addressState)
+  (LensFor addressZip)
+  (UserId (LensFor addressUserForId))
+  = tableLenses
+
+User
+  (LensFor userEmail)
+  (LensFor userFirstName)
+  (LensFor userLastName)
+  (LensFor userPassword)
+  = tableLenses
+
+ShoppingCartDb
+  (TableLens shoppingCartUsers)
+  (TableLens shoppingCartUserAddresses)
+  = dbLenses
+
+insertNewUsers = runDebugInDb $
+  let james     = User "james@example.com" "James" "Smith" "b4cc344d25a2efe540adbf2678e2304c"
+      betty     = User "betty@example.com" "Betty" "Jones" "82b054bd83ffad9b6cf8bdb98ce3cc2f"
+      sam       = User "sam@example.com" "Sam" "Taylor" "332532dcfaa1cbf61e2a266bd723612c"
+      -- jamesAddr = Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (pk james)
+      -- bettyAddr = Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (pk betty)
+      -- samAddr   = Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (pk betty)
+  in (runInsert $ insert (_shoppingCartUsers shoppingCartDb) $ insertValues [ james, betty, sam ])
+     -- (runInsert $ insert (_shoppingCartUserAddresses shoppingCartDb) $ insertExpressions [ jamesAddr, bettyAddr, samAddr ])
+
+-- see: https://github.com/haskell-beam/beam/issues/337#issuecomment-575249344
+test =
+  let james     = User "james@example.com" "James" "Smith" "b4cc344d25a2efe540adbf2678e2304c"
+      betty     = User "betty@example.com" "Betty" "Jones" "82b054bd83ffad9b6cf8bdb98ce3cc2f"
+      -- addresses = [ Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (val_ (pk james))
+      --             , Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (val_ (pk betty))
+      --             , Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (val_ (pk betty)) ]
+      --             :: [AddressT (QExpr Sqlite s)]
+  in runDebugInDb $
+     runInsert $
+     insert (_shoppingCartUserAddresses shoppingCartDb) $
+     -- insertExpressions addresses
+     insertExpressions [ Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (val_ (pk james))
+                       , Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (val_ (pk betty))
+                       , Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (val_ (pk betty)) ]
+
+-- runBeamSqliteDebug putStrLn conn $ runInsert $
+--   insert (_shoppingCartUserAddresses shoppingCartDb) $
+--   insertExpressions addresses
+
