@@ -67,8 +67,14 @@ showUsers3 = let allUsers = all_ (_shoppingCartUsers shoppingCartDb)
 addUsers = do conn <- getDb
               runDebug conn $ runInsert $
                 insert (_shoppingCartUsers shoppingCartDb) $
-                insertValues [ User "js@test.com" "James" "Smith" "1332123"
-                             , User "bj@test.com" "Betty" "Jones" "1232132" ]
+                insertValues [ User "james@example.com" "James" "Smith" "1332123"
+                             , User "betty@example.com" "Betty" "Jones" "1232132"
+                             , User "sam@example.com" "Sam" "Taylor" "123123"
+                             , User "james@pallo.com" "James" "Pollo" "123213"
+                             , User "betty@sims.com" "Betty" "Sims" "321332"
+                             , User "james@oreily.com" "James" "O'Reily" "132421"
+                             , User "sam@sophitz.com" "Sam" "Sophitz" "234121"
+                             , User "sam@jely.com" "Sam" "Jely" "421552" ]
 
 showUsers = let allUsers = all_ (_shoppingCartUsers shoppingCartDb)
             in do conn <- getDb
@@ -98,3 +104,13 @@ showUserCount = runDebugInDb $ do c <- runSelectReturningOne $
                                     aggregate_ (\u -> as_ @Int32 countAll_) $
                                     all_ userTable
                                   liftIO $ putStrLn ("We have " ++ show c ++ " users in the db.")
+
+deleteUsers = runDebugInDb $ do runDelete $
+                                  delete userTable (\u -> val_ True);
+
+aggregateSelect = runDebugInDb $
+  do countedByName <- runSelectReturningList $
+       select $
+       aggregate_ (\u -> (group_ (_userFirstName u), as_ @Int32 countAll_)) $
+       all_ userTable
+     mapM_ (liftIO . putStrLn . show) countedByName
