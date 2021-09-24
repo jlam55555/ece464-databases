@@ -20,9 +20,19 @@ import Database.SQLite.Simple
 -- for debugging
 import Data.Typeable
 
+-- for lenses
+import Control.Lens
+
+import System.Process (callCommand)
+import Data.Text (pack, unpack, replace)
 
 -- sample thing to play around with
 -- let range = [0,4..1000] in map (\(x, y) -> y) (filter (\(x, y) -> x) (zip (map isLeapYear range) range))
+
+-- the following are equivalent:
+-- [(x,y) | x <- [1,2,3], y <- [4,5,6]]
+-- do x <- [1,2,3]; y <- [4,5,6]; return (x, y)
+-- [1, 2, 3] >>= \x -> [4, 5, 6] >>= \y -> return (x, y)x
 
 main :: IO ()
 main = someFunc
@@ -63,11 +73,13 @@ shoppingCartDb = defaultDbSettings `withDbModification` dbModification
     , _addressLine2   = fieldNamed "address2"
     , _addressForUser = UserId (fieldNamed "user") } }
 
-getDb = open "shoppingcart1.db"
-runDebug conn = runBeamSqliteDebug putStr conn
+dbFile               = "shoppingcart1.db"
+getDb                = open dbFile
+runDebug conn        = runBeamSqliteDebug putStr conn
+-- runDebugInDb         :: SqliteM a -> IO a
 runDebugInDb actions = do conn <- getDb
                           runDebug conn actions
-userTable = _shoppingCartUsers shoppingCartDb
+userTable            = _shoppingCartUsers shoppingCartDb
 
 showUsers2 = let allUsers = all_ (_shoppingCartUsers shoppingCartDb)
              in runDebugInDb $ do users <- runSelectReturningList $ select allUsers
@@ -119,8 +131,7 @@ showUserCount = runDebugInDb $ do c <- runSelectReturningOne $
                                     all_ userTable
                                   liftIO $ putStrLn ("We have " ++ show c ++ " users in the db.")
 
-deleteUsers = runDebugInDb $ do runDelete $
-                                  delete userTable (\u -> val_ True)
+deleteUsers = runDebugInDb $ do runDelete $ delete userTable $ const $ val_ True
 
 aggregateSelect = runDebugInDb $
   do countedByName <- runSelectReturningList $
@@ -157,7 +168,7 @@ Address
   (LensFor addressCity)
   (LensFor addressState)
   (LensFor addressZip)
-  (UserId (LensFor addressUserForId))
+  (UserId (LensFor addressForUserId))
   = tableLenses
 
 User
@@ -203,3 +214,73 @@ insertNewUsers = runDebugInDb $
          (val_ "TX")
          (val_ "8989")
          (val_ (pk betty)) ])
+
+selectWithLens = runDebugInDb $
+  do addresses <- runSelectReturningList $
+       select $
+       all_ $
+       shoppingCartDb ^. shoppingCartUserAddresses
+     mapM_ (liftIO . print) addresses
+
+selectAllPairs = runDebugInDb $
+  do allPairs <- runSelectReturningList $
+       select $
+       do user <- all_ (shoppingCartDb ^. shoppingCartUsers)
+          address <- all_ (shoppingCartDb ^. shoppingCartUserAddresses)
+          guard_ (address ^. addressForUserId ==. user ^. userEmail)
+          return (user, address)
+     mapM_ (liftIO . print) allPairs
+
+-- this version using `references_` rather than manual join
+-- this so that we don't have to get the primary key of the referencing field
+selectAllPairs2 = runDebugInDb $
+  do allPairs <- runSelectReturningList $
+       select $
+       do user <- all_ (shoppingCartDb ^. shoppingCartUsers)
+          address <- all_ (shoppingCartDb ^. shoppingCartUserAddresses)
+          guard_ (_addressForUser address `references_` user)
+          return (user, address)
+     mapM_ (liftIO . print) allPairs
+
+-- this version using `related_` which acts like an `ON` clause
+selectAllPairs3 = runDebugInDb $
+  do allPairs <- runSelectReturningList $
+       select $
+       do address <- all_ (shoppingCartDb ^. shoppingCartUserAddresses)
+          user <- related_ (shoppingCartDb ^. shoppingCartUsers) (_addressForUser address)
+          return (user, address)
+     mapM_ (liftIO . print) allPairs
+
+-- example to select using `WHERE` with a literal value
+selectWhereLiteral = runDebugInDb $
+  do bettysAddress <- runSelectReturningList $
+       select $
+       do address <- all_ (shoppingCartDb ^. shoppingCartUserAddresses)
+          guard_ (_addressForUser address ==. val_ (UserId "betty@example.com"))
+          return address
+     mapM_ (liftIO . print) bettysAddress
+
+updateExample =
+  do [james] <- runDebugInDb $
+       do runUpdate $
+            -- use the following if we have the whole record at hand and want
+            -- to update every field
+            -- save (shoppingCartDb ^. shoppingCartUsers) (james {_userPassword = "52a516..."})
+            update
+            (shoppingCartDb ^. shoppingCartUsers)
+            (\user -> user ^. userPassword <-. val_ "52a516.....")
+            (\user -> _userEmail user ==. val_ "james@example.com")
+          runSelectReturningList $
+            lookup_ (shoppingCartDb ^. shoppingCartUsers) (UserId "james@example.com")
+     putStrLn ("James's new password is " ++ show (james ^. userPassword))
+
+-- run an arbitrary query
+-- example: `runQuery "SELECT * FROM addresses;"`
+runQuery query =
+  let command = ("sqlite3 " ++
+                 dbFile ++
+                 " '.header on' '.mode column' '" ++
+                 unpack (replace "'" "\\'" $ pack query) ++
+                 "' '.exit'")
+  in do putStrLn command
+        callCommand command

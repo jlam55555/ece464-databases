@@ -26,6 +26,9 @@ dependencies:
 - beam-core
 - beam-sqlite
 - beam-migrate
+- lens
+- process
+
 
 library:
   source-dirs: src
