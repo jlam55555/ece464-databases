@@ -421,68 +421,40 @@ createTables3 =
      execute_ conn "CREATE TABLE shipping_info ( id INTEGER PRIMARY KEY AUTOINCREMENT, carrier VARCHAR NOT NULL, tracking_number VARCHAR NOT NULL);"
      execute_ conn "CREATE TABLE line_items (item_in_order__id INTEGER NOT NULL, item_for_product__id INTEGER NOT NULL, item_quantity INTEGER NOT NULL)"
 
+users :: [User];
+james, betty, sam :: User;
+users@[james, betty, sam] =
+  [ User "james@example.com" "James" "Smith"  "b4cc344d25a2efe540adbf2678e2304c" {- james -}
+  , User "betty@example.com" "Betty" "Jones"  "82b054bd83ffad9b6cf8bdb98ce3cc2f" {- betty -}
+  , User "sam@example.com"   "Sam"   "Taylor" "332532dcfaa1cbf61e2a266bd723612c" {- sam -} ]
+
+addresses :: [AddressT (QExpr Sqlite s)]
+addresses =
+  [ Address default_ (val_ "123 Little Street") (val_ Nothing) (val_ "Boston") (val_ "MA") (val_ "12345") (val_ (pk james))
+  , Address default_ (val_ "222 Main Street") (val_ (Just "Ste 1")) (val_ "Houston") (val_ "TX") (val_ "8888") (val_ (pk betty))
+  , Address default_ (val_ "9999 Residence Ave") (val_ Nothing) (val_ "Sugarland") (val_ "TX") (val_ "8989") (val_ (pk betty)) ]
+
+products :: [ProductT (QExpr Sqlite s)]
+products =
+  [ Product default_ (val_ "Red Ball") (val_ "A bright red, very spherical ball") (val_ 1000)
+  , Product default_ (val_ "Math Textbook") (val_ "Contains a lot of important math theorems and formulae") (val_ 2500)
+  , Product default_ (val_ "Intro to Haskell") (val_ "Learn the best programming language in the world") (val_ 3000)
+  , Product default_ (val_ "Suitcase") "A hard durable suitcase" 15000 ]
+
 -- insert returning new elements (e.g., to get ID's)
 -- test fixture
 insertData3 =
-  let users@[james, betty, sam] =
-        [ User "james@example.com" "James" "Smith"  "b4cc344d25a2efe540adbf2678e2304c" {- james -}
-        , User "betty@example.com" "Betty" "Jones"  "82b054bd83ffad9b6cf8bdb98ce3cc2f" {- betty -}
-        , User "sam@example.com"   "Sam"   "Taylor" "332532dcfaa1cbf61e2a266bd723612c" {- sam -} ]
-  in do conn <- getDb3
-        (jamesAddress1, bettyAddress1, bettyAddress2, redBall, mathTextbook, introToHaskell, suitcase) <- runBeamSqliteDebug putStrLn conn $
-          do runInsert $
-               insert (shoppingCartDb ^. shoppingCartUsers) $
-               insertValues users
-             [jamesAddress1, bettyAddress1, bettyAddress2] <- runInsertReturningList $
-               insertReturning (shoppingCartDb ^. shoppingCartUserAddresses) $ insertExpressions
-               [ Address
-                 default_
-                 (val_ "123 Little Street")
-                 (val_ Nothing)
-                 (val_ "Boston")
-                 (val_ "MA")
-                 (val_ "12345")
-                 (val_ (pk james))
-                , Address
-                  default_
-                  (val_ "222 Main Street")
-                  (val_ (Just "Ste 1"))
-                  (val_ "Houston")
-                  (val_ "TX")
-                  (val_ "8888")
-                  (val_ (pk betty))
-                , Address
-                  default_
-                  (val_ "9999 Residence Ave")
-                  (val_ Nothing)
-                  (val_ "Sugarland")
-                  (val_ "TX")
-                  (val_ "8989")
-                  (val_ (pk betty)) ]
-             [redBall, mathTextbook, introToHaskell, suitcase] <- runInsertReturningList $
-               insertReturning (shoppingCartDb ^. shoppingCartProducts) $ insertExpressions
-               [ Product
-                 default_
-                 (val_ "Red Ball")
-                 (val_ "A bright red, very spherical ball")
-                 (val_ 1000)
-               , Product
-                 default_
-                 (val_ "Math Textbook")
-                 (val_ "Contains a lot of important math theorems and formulae")
-                 (val_ 2500)
-               , Product
-                 default_
-                 (val_ "Intro to Haskell")
-                 (val_ "Learn the best programming language in the world")
-                 (val_ 3000)
-               , Product
-                 default_
-                 (val_ "Suitcase")
-                 "A hard durable suitcase"
-                 15000 ]
-             pure ( jamesAddress1, bettyAddress1, bettyAddress2, redBall, mathTextbook, introToHaskell, suitcase )
-        putStrLn "hello"
+ do conn <- getDb3
+    (jamesAddress1, bettyAddress1, bettyAddress2, redBall, mathTextbook, introToHaskell, suitcase) <- runBeamSqliteDebug putStrLn conn $
+      do runInsert $
+           insert (shoppingCartDb ^. shoppingCartUsers) $
+           insertValues users
+         [jamesAddress1, bettyAddress1, bettyAddress2] <- runInsertReturningList $
+           insertReturning (shoppingCartDb ^. shoppingCartUserAddresses) $ insertExpressions addresses
+         [redBall, mathTextbook, introToHaskell, suitcase] <- runInsertReturningList $
+           insertReturning (shoppingCartDb ^. shoppingCartProducts) $ insertExpressions products
+         pure ( jamesAddress1, bettyAddress1, bettyAddress2, redBall, mathTextbook, introToHaskell, suitcase )
+    putStrLn "hello"
 
 -- marshalling a custom type
 marshalExample =
@@ -503,5 +475,3 @@ instance FromBackendRow Sqlite ShippingCarrier where
 
 -- insert transactions with timestamp using currentTimestamp_
 -- won't show this here out of laziness
-
-
