@@ -28,7 +28,7 @@ dependencies:
 - beam-migrate
 - lens
 - process
-
+- time
 
 library:
   source-dirs: src
