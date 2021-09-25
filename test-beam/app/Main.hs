@@ -76,7 +76,7 @@ shoppingCartDb = defaultDbSettings `withDbModification` dbModification
 dbFile               = "shoppingcart1.db"
 getDb                = open dbFile
 runDebug conn        = runBeamSqliteDebug putStr conn
--- runDebugInDb         :: SqliteM a -> IO a
+runDebugInDb         :: SqliteM a -> IO a
 runDebugInDb actions = do conn <- getDb
                           runDebug conn actions
 userTable            = _shoppingCartUsers shoppingCartDb
@@ -284,3 +284,10 @@ runQuery query =
                  "' '.exit'")
   in do putStrLn command
         callCommand command
+
+deleteExample = runDebugInDb $
+  runDelete $
+  delete
+  (shoppingCartDb ^. shoppingCartUserAddresses)
+  (\address -> address ^. addressCity ==. "Houston" &&.
+               address ^. addressForUserId ==. "betty@example.com")
