@@ -25,6 +25,7 @@ dependencies:
 - beam-mysql
 - mysql-simple
 - text
+- time
 
 library:
   source-dirs: src
