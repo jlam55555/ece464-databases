@@ -33,10 +33,13 @@ data SailorT f =
   deriving (Generic)
 
 type Sailor = SailorT Identity
+
 type SailorId = PrimaryKey SailorT Identity
+
 instance Beamable SailorT
 
 deriving instance Show Sailor
+
 deriving instance Eq Sailor
 
 instance Table SailorT where
@@ -53,44 +56,15 @@ data SailorDb f =
 sailorDb :: DatabaseSettings be SailorDb
 sailorDb = defaultDbSettings
 
--- data UserT f =
---   User
---     { _userEmail     :: Columnar f Text
---     , _userFirstName :: Columnar f Text
---     , _userLastName  :: Columnar f Text
---     , _userPassword  :: Columnar f Text
---     }
---   deriving (Generic)
-
--- type User = UserT Identity
-
--- type UserId = PrimaryKey UserT Identity
-
--- deriving instance Show User
-
--- deriving instance Eq User
-
--- instance Beamable UserT
-
--- instance Table UserT where
---   data PrimaryKey UserT f = UserId (Columnar f Text)
---                             deriving (Generic, Beamable)
---   primaryKey = UserId . _userEmail
-
--- data ShoppingCartDb f =
---   ShoppingCartDb
---     { _shoppingCartUsers :: f (TableEntity UserT)
---     }
---   deriving (Generic, Database be)
-
--- shoppingCartDb :: DatabaseSettings be ShoppingCartDb
--- shoppingCartDb = defaultDbSettings
-
 dbConnection =
-  connect defaultConnectInfo {connectUser = "jon", connectDatabase = "ece464_pset1"}
+  connect
+    defaultConnectInfo {connectUser = "jon", connectDatabase = "ece464_pset1"}
+
+runQuery query = do
+  conn <- dbConnection
+  runBeamMySQLDebug putStr conn query
 
 -- test query
-testQuery = do
-  conn <- dbConnection
-  runBeamMySQLDebug putStr conn $ do
+testQuery =
+  runQuery $ do
     runSelectReturningList $ select $ all_ (_sailorsSailors sailorDb)
