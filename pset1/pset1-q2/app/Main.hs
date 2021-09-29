@@ -121,75 +121,160 @@ dbConnection = connect defaultConnectInfo { connectUser     = "jon"
                                           , connectDatabase = "ece464_pset1"
                                           }
 
--- abstracted syntax for joins
+-- abstracted syntax for joins; more consistent than the library `join_`
 join tab1 tab2 cond res = do
   res1 <- tab1
   res2 <- tab2
   guard_ $ cond res1 res2
   pure $ res res1 res2
 
-runQuery query = do
-  conn <- dbConnection
-  runBeamMySQLDebug putStrLn conn query
+runQuery query =
+  dbConnection >>= \conn -> runBeamMySQLDebug putStrLn conn query
 
 -- query #1 -- version 2
-pset1Query1 = runQuery $ do
-  runSelectReturningList $ select $ join
-    boats
-    ( aggregate_
-        (\(boat, reservation) -> (group_ (_boatBid boat), as_ @Int countAll_))
-    $ join
-        boats
-        reserves
-        (\boat reservation -> _reservesBid reservation `references_` boat)
-        (,)
-    )
-    (\boat (bid, count) -> BoatId bid `references_` boat)
-    (\boat (bid, count) -> (bid, (_boatBname boat), count))
+pset1Query1 = runQuery $ runSelectReturningList $ select $ join
+  boats
+  ( aggregate_
+      (\(boat, reservation) -> (group_ (_boatBid boat), as_ @Int countAll_))
+  $ join boats
+         reserves
+         (\boat reservation -> _reservesBid reservation `references_` boat)
+         (,)
+  )
+  (\boat (bid, count) -> BoatId bid `references_` boat)
+  (\boat (bid, count) -> (bid, (_boatBname boat), count))
 
 -- query #2
-pset1Query2 = runQuery $ do
-  runSelectReturningList $ select $ do
-    sailor <- filter_
-      (\sailor -> not_ . exists_ $ filter_
-        (\boat ->
-          (_boatColor boat ==. val_ "red")
-            &&. (not_ . exists_ $ filter_
-                  (\reservation ->
-                    (_reservesBid reservation `references_` boat)
-                      &&. (_reservesSid reservation `references_` sailor)
-                  )
-                  reserves
+pset1Query2 = runQuery $ runSelectReturningList $ select $ do
+  sailor <- filter_
+    (\sailor -> not_ . exists_ $ filter_
+      (\boat ->
+        (_boatColor boat ==. val_ "red")
+          &&. (not_ . exists_ $ filter_
+                (\reservation ->
+                  (_reservesBid reservation `references_` boat)
+                    &&. (_reservesSid reservation `references_` sailor)
                 )
-        )
-        boats
+                reserves
+              )
       )
-      sailors
-    pure (_sailorSid sailor, _sailorSname sailor)
+      boats
+    )
+    sailors
+  pure (_sailorSid sailor, _sailorSname sailor)
 
 -- query #3
-pset1Query3 = runQuery $ do
-  runSelectReturningList $ select $ join
+pset1Query3 = runQuery $ runSelectReturningList $ select $ join
+  sailors
+  (let haveReservedRed = join
+         reserves
+         (filter_ (\boat -> _boatColor boat ==. val_ "red") boats)
+         (\reservation boat -> _reservesBid reservation `references_` boat)
+         (\reservation boat -> (_reservesSid reservation))
+       haveReservedNonRed = join
+         reserves
+         (filter_ (\boat -> _boatColor boat /=. val_ "red") boats)
+         (\reservation boat -> _reservesBid reservation `references_` boat)
+         (\reservation boat -> (_reservesSid reservation))
+   in  haveReservedRed `except_` haveReservedNonRed
+  )
+  (\sailor (SailorId sid) -> sid ==. _sailorSid sailor)
+  (\sailor (SailorId sid) -> (sid, _sailorSname sailor))
+
+-- query #4
+-- pset1Query4 = runQuery $ do
+--   runSelectReturningList $ select $ join
+
+-- query #5
+pset1Query5 = runQuery $ runSelectReturningList $ select $ do
+  sailor <- nub_ $ except_
     sailors
-    (let haveReservedRed = join
-           reserves
-           (filter_ (\boat -> _boatColor boat ==. val_ "red") boats)
-           (\reservation boat -> _reservesBid reservation `references_` boat)
-           (\reservation boat -> (_reservesSid reservation))
-         haveReservedNonRed = join
-           reserves
-           (filter_ (\boat -> _boatColor boat /=. val_ "red") boats)
-           (\reservation boat -> _reservesBid reservation `references_` boat)
-           (\reservation boat -> (_reservesSid reservation))
-     in  haveReservedRed `except_` haveReservedNonRed
+    (join
+      (filter_ (\boat -> _boatColor boat ==. val_ "red") boats)
+      (join
+        sailors
+        reserves
+        (\sailor reservation -> _reservesSid reservation `references_` sailor)
+        (,)
+      )
+      (\boat (_, reservation) -> _reservesBid reservation `references_` boat)
+      (\_ (sailor, _) -> sailor)
     )
-    (\sailor (SailorId sid) -> sid ==. _sailorSid sailor)
-    (\sailor (SailorId sid) -> (sid, _sailorSname sailor))
+  pure (_sailorSid sailor, _sailorSname sailor)
 
 -- query #6
-pset1Query6 = runQuery $ do
-  runSelectReturningList
+pset1Query6 =
+  runQuery
+    $ runSelectReturningList
     $ select
     -- need to cast `age` to fp type otherwise it would return an int
     $ aggregate_ (\sailor -> avg_ $ cast_ (_sailorAge sailor) double)
     $ filter_ (\sailor -> _sailorRating sailor ==. val_ 10) sailors
+
+-- query #7
+pset1Query7 = runQuery $ runSelectReturningList $ select $ join
+  sailors
+  (aggregate_
+    (\sailor -> (group_ (_sailorRating sailor), min_ (_sailorAge sailor)))
+    sailors
+  )
+  (\sailor (rating, age) ->
+    (_sailorRating sailor ==. rating)
+      &&. (_sailorAge sailor ==. fromMaybe_ (-1) age)
+  )
+  (\sailor _ ->
+    ( _sailorSid sailor
+    , _sailorSname sailor
+    , _sailorRating sailor
+    , _sailorAge sailor
+    )
+  )
+
+-- query #8
+pset1Query8 = do
+  runQuery
+    $ runSelectReturningList
+    $ select
+    $ (let
+         reservationCountByBoat =
+           aggregate_
+               (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int countAll_))
+             $ join
+                 boats
+                 reserves
+                 (\boat reservation ->
+                   _reservesBid reservation `references_` boat
+                 )
+                 (\boat reservation ->
+                   (_reservesSid reservation, _reservesBid reservation)
+                 )
+         maxReservationsByBoat = aggregate_
+           (\(bid, sid, count) -> (group_ bid, max_ count))
+           reservationCountByBoat
+         reservationCountByBoat2 =
+           aggregate_
+               (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int countAll_))
+             $ join
+                 boats
+                 reserves
+                 (\boat reservation ->
+                   _reservesBid reservation `references_` boat
+                 )
+                 (\boat reservation ->
+                   (_reservesSid reservation, _reservesBid reservation)
+                 )
+         maxReservationsByBoatUsers = join
+           maxReservationsByBoat
+           reservationCountByBoat2
+           (\(bid1, count1) (bid2, _, count2) ->
+             (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
+           )
+           (\_ a -> a)
+         maxReservationsByBoatUserDetails = join
+           maxReservationsByBoatUsers
+           sailors
+           (\(bid, sid, count) sailor -> sid `references_` sailor)
+           (\(bid, sid, count) sailor -> (bid, sid, _sailorSname sailor, count))
+       in
+         maxReservationsByBoatUserDetails
+      )
