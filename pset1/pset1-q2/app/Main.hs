@@ -1,60 +1,96 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Main where
 
-import Lib
+import           Lib
 
-import Database.Beam
-import Database.Beam.MySQL
-import Database.MySQL.Simple
+import           Database.Beam
+import           Database.Beam.MySQL
+import           Database.MySQL.Simple
 
-import Data.Text
+import           Data.Text
 
 main :: IO ()
 main = someFunc
 
-data UserT f = User
-  { _userEmail     :: Columnar f Text
-  , _userFirstName :: Columnar f Text
-  , _userLastName  :: Columnar f Text
-  , _userPassword  :: Columnar f Text }
-  deriving Generic
+data SailorT f =
+  Sailor
+    { _sailorSid    :: C f Int
+    , _sailorSname  :: C f Text
+    , _sailorRating :: C f Int
+    , _sailorAge    :: C f Int
+    }
+  deriving (Generic)
 
-type User   = UserT Identity
-type UserId = PrimaryKey UserT Identity
+type Sailor = SailorT Identity
+type SailorId = PrimaryKey SailorT Identity
+instance Beamable SailorT
 
-deriving instance Show User
-deriving instance Eq User
+deriving instance Show Sailor
+deriving instance Eq Sailor
 
-instance Beamable UserT
+instance Table SailorT where
+  data PrimaryKey SailorT f = SailorId (Columnar f Int)
+                              deriving (Generic, Beamable)
+  primaryKey = SailorId . _sailorSid
 
-instance Table UserT where
-    data PrimaryKey UserT f = UserId (Columnar f Text) deriving (Generic, Beamable)
-    primaryKey              = UserId . _userEmail
-
-data ShoppingCartDb f = ShoppingCartDb
-  { _shoppingCartUsers         :: f (TableEntity UserT) }
+data SailorDb f =
+  SailorDb
+    { _sailorsSailors :: f (TableEntity SailorT)
+    }
   deriving (Generic, Database be)
 
-shoppingCartDb :: DatabaseSettings be ShoppingCartDb
-shoppingCartDb = defaultDbSettings
+sailorDb :: DatabaseSettings be SailorDb
+sailorDb = defaultDbSettings
 
-dbConnection = connect defaultConnectInfo { connectUser = "jon" }
+-- data UserT f =
+--   User
+--     { _userEmail     :: Columnar f Text
+--     , _userFirstName :: Columnar f Text
+--     , _userLastName  :: Columnar f Text
+--     , _userPassword  :: Columnar f Text
+--     }
+--   deriving (Generic)
+
+-- type User = UserT Identity
+
+-- type UserId = PrimaryKey UserT Identity
+
+-- deriving instance Show User
+
+-- deriving instance Eq User
+
+-- instance Beamable UserT
+
+-- instance Table UserT where
+--   data PrimaryKey UserT f = UserId (Columnar f Text)
+--                             deriving (Generic, Beamable)
+--   primaryKey = UserId . _userEmail
+
+-- data ShoppingCartDb f =
+--   ShoppingCartDb
+--     { _shoppingCartUsers :: f (TableEntity UserT)
+--     }
+--   deriving (Generic, Database be)
+
+-- shoppingCartDb :: DatabaseSettings be ShoppingCartDb
+-- shoppingCartDb = defaultDbSettings
+
+dbConnection =
+  connect defaultConnectInfo {connectUser = "jon", connectDatabase = "ece464_pset1"}
 
 -- test query
-testQuery =
-  do conn <- dbConnection
-     runBeamMySQLDebug putStr conn $
-       do runSelectReturningList $
-            select $
-            all_ (_shoppingCartUsers shoppingCartDb)
+testQuery = do
+  conn <- dbConnection
+  runBeamMySQLDebug putStr conn $ do
+    runSelectReturningList $ select $ all_ (_sailorsSailors sailorDb)
