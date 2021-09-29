@@ -147,52 +147,44 @@ pset1Query1 = runQuery $ do
     (\boat (bid, count) -> BoatId bid `references_` boat)
     (\boat (bid, count) -> (bid, (_boatBname boat), count))
 
--- pset1Query2 = runQuery $ do
---   runSelectReturningList $ select $ filter_
---     (\sailor -> not_ . exists_ $ except_ boats boats
---       -- (fmap
---       --   (\reservation -> let BoatId bid = _reservesBid reservation in bid)
---       --   (filter_
---       --     (\reservation -> _reservesSid reservation `references_` sailor)
---       --     reserves
---       --   )
---       -- )
---                                                     )
---     sailors
+-- query #2
+pset1Query2 = runQuery $ do
+  runSelectReturningList $ select $ do
+    sailor <- filter_
+      (\sailor -> not_ . exists_ $ filter_
+        (\boat ->
+          (_boatColor boat ==. val_ "red")
+            &&. (not_ . exists_ $ filter_
+                  (\reservation ->
+                    (_reservesBid reservation `references_` boat)
+                      &&. (_reservesSid reservation `references_` sailor)
+                  )
+                  reserves
+                )
+        )
+        boats
+      )
+      sailors
+    pure (_sailorSid sailor, _sailorSname sailor)
 
--- outer = filter_ (\sailor -> (not_ . exists_) (middle sailor)) sailors
-
--- -- SELECT sid, sname
--- -- FROM sailors s
--- -- WHERE NOT EXISTS middle
-
--- middle s =
---   except_ (fmap (BoatId . _boatBid) boats) (fmap _reservesBid (inner s))
-
--- -- SELECT bid
--- -- FROM boats
--- -- EXCEPT inner
-
--- inner s =
---   filter_ (\reservation -> _reservesSid reservation `references_` s) reserves
-
--- SELECT bid
--- FROM reserves r
--- WHERE r.sid=s.sid
-
--- SELECT sid, sname
--- FROM sailors s
--- WHERE NOT EXISTS (
---       -- red boat not reserved by them
---       SELECT bid
---       FROM boats
---       EXCEPT (
---              SELECT bid
---              FROM reserves r
---              WHERE r.sid=s.sid
---       )
--- );
-
+-- query #3
+pset1Query3 = runQuery $ do
+  runSelectReturningList $ select $ join
+    sailors
+    (let haveReservedRed = join
+           reserves
+           (filter_ (\boat -> _boatColor boat ==. val_ "red") boats)
+           (\reservation boat -> _reservesBid reservation `references_` boat)
+           (\reservation boat -> (_reservesSid reservation))
+         haveReservedNonRed = join
+           reserves
+           (filter_ (\boat -> _boatColor boat /=. val_ "red") boats)
+           (\reservation boat -> _reservesBid reservation `references_` boat)
+           (\reservation boat -> (_reservesSid reservation))
+     in  haveReservedRed `except_` haveReservedNonRed
+    )
+    (\sailor (SailorId sid) -> sid ==. _sailorSid sailor)
+    (\sailor (SailorId sid) -> (sid, _sailorSname sailor))
 
 -- query #6
 pset1Query6 = runQuery $ do

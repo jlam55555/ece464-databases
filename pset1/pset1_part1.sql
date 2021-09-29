@@ -21,10 +21,26 @@ WHERE NOT EXISTS (
       -- red boat not reserved by them
       SELECT bid
       FROM boats
+      WHERE color='red'
       EXCEPT (
              SELECT bid
              FROM reserves r
              WHERE r.sid=s.sid
+      )
+);
+
+-- alternatively:
+SELECT sid, sname
+FROM sailors s
+WHERE NOT EXISTS (
+      -- red boat not reserved by them
+      SELECT bid
+      FROM boats b
+      WHERE color='red'
+      AND NOT EXISTS (
+            SELECT bid
+            FROM reserves r
+            WHERE r.sid=s.sid AND r.bid=b.bid
       )
 );
 
