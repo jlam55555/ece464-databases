@@ -113,28 +113,39 @@ sailorDb = defaultDbSettings `withDbModification` dbModification
                          }
   }
 
+sailors = all_ $ _sailorsSailors sailorDb
+boats = all_ $ _sailorsBoats sailorDb
+reserves = all_ $ _sailorsReserves sailorDb
+
 dbConnection = connect defaultConnectInfo { connectUser     = "jon"
                                           , connectDatabase = "ece464_pset1"
                                           }
+
+-- abstracted syntax for joins
+join tab1 tab2 cond res = do
+  res1 <- tab1
+  res2 <- tab2
+  guard_ $ cond res1 res2
+  pure $ res res1 res2
 
 runQuery query = do
   conn <- dbConnection
   runBeamMySQLDebug putStrLn conn query
 
--- query #1
+-- query #1 -- version 2
 pset1Query1 = runQuery $ do
-  runSelectReturningList $ select $ do
-    (bid, count) <-
-      aggregate_
-          (\(boat, reservation) -> (group_ (_boatBid boat), as_ @Int countAll_))
-        $ do
-            boat        <- all_ (_sailorsBoats sailorDb)
-            reservation <- all_ (_sailorsReserves sailorDb)
-            guard_ (_reservesBid reservation `references_` boat)
-            pure (boat, reservation)
-    boat <- all_ (_sailorsBoats sailorDb)
-    guard_ (BoatId bid `references_` boat)
-    pure (bid, _boatBname boat, count)
+  runSelectReturningList $ select $ join
+    boats
+    ( aggregate_
+        (\(boat, reservation) -> (group_ (_boatBid boat), as_ @Int countAll_))
+    $ join
+        boats
+        reserves
+        (\boat reservation -> _reservesBid reservation `references_` boat)
+        (,)
+    )
+    (\boat (bid, count) -> BoatId bid `references_` boat)
+    (\boat (bid, count) -> (bid, (_boatBname boat), count))
 
 -- query #6
 pset1Query6 = runQuery $ do
@@ -142,5 +153,4 @@ pset1Query6 = runQuery $ do
     $ select
     -- need to cast `age` to fp type otherwise it would return an int
     $ aggregate_ (\sailor -> avg_ $ cast_ (_sailorAge sailor) double)
-    $ filter_ (\sailor -> _sailorRating sailor ==. val_ 10)
-    $ all_ (_sailorsSailors sailorDb)
+    $ filter_ (\sailor -> _sailorRating sailor ==. val_ 10) sailors
