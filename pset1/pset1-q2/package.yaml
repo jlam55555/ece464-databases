@@ -26,6 +26,10 @@ dependencies:
 - mysql-simple
 - text
 - time
+- hspec
+- hspec-contrib
+- QuickCheck
+- HUnit
 
 library:
   source-dirs: src

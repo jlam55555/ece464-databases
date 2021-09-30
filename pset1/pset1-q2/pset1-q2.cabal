@@ -25,16 +25,21 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Queries
       Schema
+      Util
   other-modules:
       Paths_pset1_q2
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      HUnit
+    , QuickCheck
+    , base >=4.7 && <5
     , beam-core
     , beam-mysql
+    , hspec
+    , hspec-contrib
     , mysql-simple
     , text
     , time
@@ -48,9 +53,13 @@ executable pset1-q2-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      HUnit
+    , QuickCheck
+    , base >=4.7 && <5
     , beam-core
     , beam-mysql
+    , hspec
+    , hspec-contrib
     , mysql-simple
     , pset1-q2
     , text
@@ -61,14 +70,19 @@ test-suite pset1-q2-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      QueriesSpec
       Paths_pset1_q2
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      HUnit
+    , QuickCheck
+    , base >=4.7 && <5
     , beam-core
     , beam-mysql
+    , hspec
+    , hspec-contrib
     , mysql-simple
     , pset1-q2
     , text
