@@ -38,11 +38,13 @@ library
     , base >=4.7 && <5
     , beam-core
     , beam-mysql
+    , hashable
     , hspec
     , hspec-contrib
     , mysql-simple
     , text
     , time
+    , unordered-containers
   default-language: Haskell2010
 
 executable pset1-q2-exe
@@ -58,12 +60,14 @@ executable pset1-q2-exe
     , base >=4.7 && <5
     , beam-core
     , beam-mysql
+    , hashable
     , hspec
     , hspec-contrib
     , mysql-simple
     , pset1-q2
     , text
     , time
+    , unordered-containers
   default-language: Haskell2010
 
 test-suite pset1-q2-test
@@ -81,10 +85,12 @@ test-suite pset1-q2-test
     , base >=4.7 && <5
     , beam-core
     , beam-mysql
+    , hashable
     , hspec
     , hspec-contrib
     , mysql-simple
     , pset1-q2
     , text
     , time
+    , unordered-containers
   default-language: Haskell2010

@@ -18,6 +18,7 @@ import           Database.Beam
 import           Database.Beam.MySQL
 import           Database.MySQL.Simple
 
+import           Data.Hashable
 import           Data.Text
 import           Data.Time
 
@@ -32,10 +33,6 @@ data SailorT f = Sailor
 
 type Sailor = SailorT Identity
 type SailorId = PrimaryKey SailorT Identity
-
-instance Beamable SailorT
-deriving instance Show Sailor
-deriving instance Eq Sailor
 
 instance Table SailorT where
   data PrimaryKey SailorT f = SailorId (C f Int)
@@ -54,10 +51,6 @@ data BoatT f = Boat
 type Boat = BoatT Identity
 type BoatId = PrimaryKey BoatT Identity
 
-instance Beamable BoatT
-deriving instance Show Boat
-deriving instance Eq Boat
-
 instance Table BoatT where
   data PrimaryKey BoatT f = BoatId (C f Int)
     deriving (Generic, Beamable)
@@ -74,15 +67,9 @@ data ReservesT f = Reserves
 type Reserves = ReservesT Identity
 type ReservesId = PrimaryKey ReservesT Identity
 
-instance Beamable ReservesT
-deriving instance Show Reserves
-deriving instance Eq Reserves
-
-deriving instance Show (PrimaryKey SailorT Identity)
-deriving instance Eq (PrimaryKey SailorT Identity)
-
-deriving instance Show (PrimaryKey BoatT Identity)
-deriving instance Eq (PrimaryKey BoatT Identity)
+instance Beamable SailorT
+deriving instance Show Sailor
+deriving instance Eq Sailor
 
 instance Table ReservesT where
   data PrimaryKey ReservesT f = ReservesId
@@ -107,6 +94,7 @@ sailorDb = defaultDbSettings `withDbModification` dbModification
                          }
   }
 
+-- convenience shorthands
 sailors :: Q MySQL SailorDb s (SailorT (QExpr MySQL s))
 sailors = all_ $ _sailorsSailors sailorDb
 
@@ -115,3 +103,20 @@ boats = all_ $ _sailorsBoats sailorDb
 
 reserves :: Q MySQL SailorDb s (ReservesT (QExpr MySQL s))
 reserves = all_ $ _sailorsReserves sailorDb
+
+-- deriving instances
+instance Beamable BoatT
+deriving instance Show Boat
+deriving instance Eq Boat
+
+instance Beamable ReservesT
+deriving instance Show Reserves
+deriving instance Eq Reserves
+
+deriving instance Show (PrimaryKey SailorT Identity)
+deriving instance Eq (PrimaryKey SailorT Identity)
+deriving instance Hashable (PrimaryKey SailorT Identity)
+
+deriving instance Show (PrimaryKey BoatT Identity)
+deriving instance Eq (PrimaryKey BoatT Identity)
+deriving instance Hashable (PrimaryKey BoatT Identity)

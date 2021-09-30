@@ -30,6 +30,8 @@ dependencies:
 - hspec-contrib
 - QuickCheck
 - HUnit
+- unordered-containers
+- hashable
 
 library:
   source-dirs: src

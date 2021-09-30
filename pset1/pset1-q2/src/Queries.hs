@@ -6,6 +6,7 @@ module Queries where
 import           Schema
 import           Util
 
+import           Data.Maybe
 import           Database.Beam
 
 pset1Query1 = runQuery $ runSelectReturningList $ select $ join
@@ -101,13 +102,20 @@ pset1Query5 = runQuery $ runSelectReturningList $ select $ do
     )
   pure (pk sailor, _sailorSname sailor)
 
-pset1Query6 =
-  runQuery
-    $ runSelectReturningList
+
+pset1Query6 = do
+  -- some type jiggling to simply return an int
+  result <-
+    runQuery
+    $ runSelectReturningOne
     $ select
     -- need to cast `age` to fp type otherwise it would return an int
-    $ aggregate_ (\sailor -> avg_ $ cast_ (_sailorAge sailor) double)
-    $ filter_ (\sailor -> _sailorRating sailor ==. val_ 10) sailors
+    $ do
+        count <-
+          aggregate_ (\sailor -> avg_ $ cast_ (_sailorAge sailor) double)
+            $ filter_ (\sailor -> _sailorRating sailor ==. val_ 10) sailors
+        pure $ fromMaybe_ 0 count
+  pure $ fromMaybe 0 result
 
 pset1Query7 = runQuery $ runSelectReturningList $ select $ join
   sailors
