@@ -9,19 +9,25 @@ import           Util
 import           Data.Maybe
 import           Database.Beam
 
-pset1Query1 = runQuery $ runSelectReturningList $ select $ join
-  boats
-  ( aggregate_
-      (\(boat, reservation) ->
-        (group_ (_reservesBid reservation), as_ @Int countAll_)
-      )
-  $ join boats
-         reserves
-         (\boat reservation -> _reservesBid reservation `references_` boat)
-         (,)
-  )
-  (\boat (bid, count) -> bid `references_` boat)
-  (\boat (bid, count) -> (bid, (_boatBname boat), count))
+pset1Query1 =
+  runQuery
+    $ runSelectReturningList
+    $ select
+    $ orderBy_ (\(BoatId bid, _, _) -> asc_ bid)
+    $ join
+        boats
+        ( aggregate_
+            (\(boat, reservation) ->
+              (group_ (_reservesBid reservation), as_ @Int countAll_)
+            )
+        $ join
+            boats
+            reserves
+            (\boat reservation -> _reservesBid reservation `references_` boat)
+            (,)
+        )
+        (\boat (bid, count) -> bid `references_` boat)
+        (\boat (bid, count) -> (bid, (_boatBname boat), count))
 
 pset1Query2 = runQuery $ runSelectReturningList $ select $ do
   sailor <- filter_
@@ -117,19 +123,28 @@ pset1Query6 = do
         pure $ fromMaybe_ 0 count
   pure $ fromMaybe 0 result
 
-pset1Query7 = runQuery $ runSelectReturningList $ select $ join
-  sailors
-  (aggregate_
-    (\sailor -> (group_ (_sailorRating sailor), min_ (_sailorAge sailor)))
-    sailors
-  )
-  (\sailor (rating, age) ->
-    (_sailorRating sailor ==. rating)
-      &&. (_sailorAge sailor ==. fromMaybe_ (-1) age)
-  )
-  (\sailor _ ->
-    (pk sailor, _sailorSname sailor, _sailorRating sailor, _sailorAge sailor)
-  )
+pset1Query7 =
+  runQuery
+    $ runSelectReturningList
+    $ select
+    $ orderBy_ (\(_, _, rating, _) -> asc_ rating)
+    $ join
+        sailors
+        (aggregate_
+          (\sailor -> (group_ (_sailorRating sailor), min_ (_sailorAge sailor)))
+          sailors
+        )
+        (\sailor (rating, age) ->
+          (_sailorRating sailor ==. rating)
+            &&. (_sailorAge sailor ==. fromMaybe_ (-1) age)
+        )
+        (\sailor _ ->
+          ( pk sailor
+          , _sailorSname sailor
+          , _sailorRating sailor
+          , _sailorAge sailor
+          )
+        )
 
 pset1Query8 = do
   runQuery
@@ -170,11 +185,14 @@ pset1Query8 = do
              (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
            )
            (\_ a -> a)
-         maxReservationsByBoatUserDetails = join
-           maxReservationsByBoatUsers
-           sailors
-           (\(bid, sid, count) sailor -> sid `references_` sailor)
-           (\(bid, sid, count) sailor -> (bid, sid, _sailorSname sailor, count))
+         maxReservationsByBoatUserDetails =
+           orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
+             maxReservationsByBoatUsers
+             sailors
+             (\(bid, sid, count) sailor -> sid `references_` sailor)
+             (\(bid, sid, count) sailor ->
+               (bid, sid, _sailorSname sailor, count)
+             )
        in
          maxReservationsByBoatUserDetails
       )
