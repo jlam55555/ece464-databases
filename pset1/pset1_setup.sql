@@ -1,6 +1,7 @@
-/* SQL queries to populate a Sailors and Boats dataset */
-CREATE DATABASE ece464_pset1;
-USE ece464_pset1;
+-- Assuming a postgresql install with user postgres:
+-- $ createuser -U postgres ece464  # create new user
+-- $ createdb ece464_pset1          # create new database
+-- $ psql -U ece464 -d ece464_pset1 <pset1_setup.sql
 
 CREATE TABLE sailors (
        sid INT PRIMARY KEY, 
@@ -75,8 +76,8 @@ INSERT INTO reserves VALUES (64, 101, '1998/9/5');
 INSERT INTO reserves VALUES (64, 102, '1998/9/8');
 INSERT INTO reserves VALUES (74, 103, '1998/9/8');
 
-INSERT INTO boats VALUES (101, 'INTerlake', 'blue', 45);
-INSERT INTO boats VALUES (102, 'INTerlake', 'red', 45);
+INSERT INTO boats VALUES (101, 'Interlake', 'blue', 45);
+INSERT INTO boats VALUES (102, 'Interlake', 'red', 45);
 INSERT INTO boats VALUES (103, 'Clipper', 'green', 40);
 INSERT INTO boats VALUES (104, 'Clipper', 'red', 40);
 INSERT INTO boats VALUES (105, 'Marine', 'red', 35);
