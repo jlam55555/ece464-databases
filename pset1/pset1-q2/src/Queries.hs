@@ -112,20 +112,17 @@ pset1Query8 = runQuery $ runSelectReturningList $ selectWith $ do
     selecting
     $ aggregate_ (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int32 countAll_))
     $ join boats reserves joinOnBid (\_ r -> (_reservesSid r, _reservesBid r))
-  pure
-    $ (let maxRsByB =
-             aggregate_ (\(bid, sid, count) -> (group_ bid, max_ count))
-               $ reuse rCountByB
-           maxRsByBUsers = join
-             maxRsByB
-             (reuse rCountByB)
-             (\(bid1, count1) (bid2, _, count2) ->
-               (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
-             )
-             (flip const)
-       in  orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
-             maxRsByBUsers
-             sailors
-             (\(_, sid, _) s -> sid `references_` s)
-             (\(bid, sid, count) s -> (bid, sid, _sailorSname s, count))
+  pure $ orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
+    (join
+      ( aggregate_ (\(bid, _, count) -> (group_ bid, max_ count))
+      $ reuse rCountByB
       )
+      (reuse rCountByB)
+      (\(bid1, count1) (bid2, _, count2) ->
+        (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
+      )
+      (flip const)
+    )
+    sailors
+    (\(_, sid, _) s -> sid `references_` s)
+    (\(bid, sid, count) s -> (bid, sid, _sailorSname s, count))
