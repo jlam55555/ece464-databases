@@ -1,4 +1,5 @@
-USE ece464_pset1;
+-- Usage: (-a flag to print out script lines as they are read)
+-- $ psql -a -U ece464 -d ece464_pset1 <pset1_part1.sql
 
 -- NOTE: If there is a tie (non-unique answer), all valid answers
 -- will be returned.
@@ -6,10 +7,15 @@ USE ece464_pset1;
 -- List, for every boat, the number of times it has been reserved,
 -- excluding those boats that have never been reserved (list the id
 -- and the name).
-SELECT bid, bname, COUNT(*) '# reservations'
-FROM reserves
+SELECT bid, bname, reserve_count
+FROM (
+     SELECT bid, COUNT(*) reserve_count
+     FROM reserves
+     JOIN boats USING (bid)
+     GROUP BY bid
+) _
 JOIN boats USING (bid)
-GROUP BY bid;
+ORDER BY bid ASC;
 
 -- List those sailors who have reserved every red boat (list the id
 -- and the name).
@@ -71,21 +77,18 @@ FROM (
 JOIN sailors USING (sid);
 
 -- For which boat are there the most reservations?
--- count number of reservations per boat
-CREATE TEMPORARY TABLE reserves_by_boat
-SELECT bid, COUNT(*) res_count
-FROM reserves
-GROUP BY bid;
--- get maximum number of reservations per boat
-SELECT bid, bname, res_count '# reservations'
+WITH reserves_by_boat AS (
+     SELECT bid, COUNT(*) res_count
+     FROM reserves
+     GROUP BY bid
+)
+SELECT bid, bname, res_count
 FROM reserves_by_boat
 JOIN boats USING (bid)
 WHERE res_count=(
       SELECT MAX(res_count)
       FROM reserves_by_boat
 );
--- delete temporary table
-DROP TABLE reserves_by_boat;
 
 -- Select all sailors who have never reserved a red boat.
 SELECT sid, sname
@@ -99,10 +102,11 @@ EXCEPT (
             FROM boats
             WHERE color='red'
        ) _ USING (bid)
-);
+)
+ORDER BY sid;
 
 -- Find the average age of sailors with a rating of 10.
-SELECT AVG(age) 'average age of sailors with rating 10'
+SELECT AVG(age) ave_age
 FROM sailors
 WHERE rating=10;
 
@@ -121,25 +125,20 @@ ORDER BY rating DESC;
 -- reservations for that boat.
 -- NOTE: assumes that all boats have had at least one reservation
 -- (true in this case)
-SELECT bid, sid, sname, res_count '# reservations'
-FROM (
-     -- select maximum reservations for each boat
-     SELECT bid, MAX(res_count) res_count
-     FROM (
-          -- reservation count for bid, sid pairs
-          SELECT bid, sid, COUNT(*) res_count
-          FROM boats
-          JOIN reserves USING (bid)
-          GROUP BY bid, sid
-     ) _
-     GROUP BY bid
-) _
-JOIN (
-     -- get all who match maximum reservations for each boat
+WITH reservation_counts AS (
+     -- reservation count for bid, sid pairs
      SELECT bid, sid, COUNT(*) res_count
      FROM boats
      JOIN reserves USING (bid)
      GROUP BY bid, sid
-) __ USING (bid, res_count)
+)
+SELECT bid, sid, sname, res_count
+FROM (
+     -- select maximum reservations for each boat
+     SELECT bid, MAX(res_count) res_count
+     FROM reservation_counts
+     GROUP BY bid
+) _
+JOIN reservation_counts USING (bid, res_count)
 JOIN sailors USING (sid)
 ORDER BY bid;
