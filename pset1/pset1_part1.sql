@@ -19,23 +19,6 @@ ORDER BY bid ASC;
 
 -- List those sailors who have reserved every red boat (list the id
 -- and the name).
--- sailors for which there are no red boats that are not reserved
--- by them
-SELECT sid, sname
-FROM sailors s
-WHERE NOT EXISTS (
-      -- red boat not reserved by them
-      SELECT bid
-      FROM boats
-      WHERE color='red'
-      EXCEPT (
-             SELECT bid
-             FROM reserves r
-             WHERE r.sid=s.sid
-      )
-);
-
--- alternatively:
 SELECT sid, sname
 FROM sailors s
 WHERE NOT EXISTS (

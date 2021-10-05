@@ -66,31 +66,22 @@ pset1Query3 = runQuery $ runSelectReturningList $ select $ join
   (\sailor sid -> (sid, _sailorSname sailor))
 
 pset1Query4 = runQuery $ do
-  runSelectReturningList
-    $ select
-    $ (let reservesByBoat = aggregate_
-             (\reservation ->
-               (group_ (_reservesBid reservation), as_ @Int32 countAll_)
-             )
-             reserves
-           reservesByBoat2 = aggregate_
-             (\reservation ->
-               (group_ (_reservesBid reservation), as_ @Int32 countAll_)
-             )
-             reserves
-           maximumReservesByBoat = filter_
-             (\(_, _, count) -> count ==. fromMaybe_
-               0
-               ( subquery_
-               $ aggregate_ (\(_, count) -> max_ count) reservesByBoat
-               )
-             )
-             (join reservesByBoat2
-                   boats
-                   (\(bid, count) boat -> bid `references_` boat)
-                   (\(bid, count) boat -> (bid, _boatBname boat, count))
-             )
-       in  maximumReservesByBoat
+  runSelectReturningList $ selectWith $ do
+    reservesByBoat <- selecting $ aggregate_
+      (\reservation -> (group_ (_reservesBid reservation), as_ @Int32 countAll_)
+      )
+      reserves
+    pure $ filter_
+      (\(_, _, count) -> count ==. fromMaybe_
+        0
+        ( subquery_
+        $ aggregate_ (\(_, count) -> max_ count) (reuse reservesByBoat)
+        )
+      )
+      (join (reuse reservesByBoat)
+            boats
+            (\(bid, count) boat -> bid `references_` boat)
+            (\(bid, count) boat -> (bid, _boatBname boat, count))
       )
 
 pset1Query5 = runQuery $ runSelectReturningList $ select $ do
