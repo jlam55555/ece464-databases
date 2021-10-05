@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE FlexibleContexts      #-}
 
 module Queries where
 
@@ -10,6 +11,16 @@ import           Data.Int
 import           Data.Maybe
 import           Database.Beam
 
+-- helper functions for red boats
+isRed b = _boatColor b ==. val_ "red"
+redBs = filter_ isRed boats
+nonRedBs = filter_ (not_ . isRed) boats
+
+joinOnBid b r = _reservesBid r `references_` b
+joinOnSid s r = _reservesSid r `references_` s
+
+-- sailors, boats, and reservations abbreviated as s, b, and r, respectively
+
 pset1Query1 =
   runQuery
     $ runSelectReturningList
@@ -17,101 +28,68 @@ pset1Query1 =
     $ orderBy_ (\(BoatId bid, _, _) -> asc_ bid)
     $ join
         boats
-        ( aggregate_
-            (\(boat, reservation) ->
-              (group_ (_reservesBid reservation), as_ @Int32 countAll_)
-            )
-        $ join
-            boats
-            reserves
-            (\boat reservation -> _reservesBid reservation `references_` boat)
-            (,)
+        (aggregate_ (\(_, r) -> (group_ (_reservesBid r), as_ @Int32 countAll_))
+        $ join boats reserves joinOnBid (,)
         )
-        (\boat (bid, count) -> bid `references_` boat)
-        (\boat (bid, count) -> (bid, (_boatBname boat), count))
+        (\b (bid, _) -> bid `references_` b)
+        (\b (bid, count) -> (bid, (_boatBname b), count))
 
 pset1Query2 = runQuery $ runSelectReturningList $ select $ do
-  sailor <- filter_
-    (\sailor -> not_ . exists_ $ filter_
-      (\boat ->
-        (_boatColor boat ==. val_ "red")
+  s <- filter_
+    (\s -> not_ . exists_ $ filter_
+      (\b ->
+        isRed b
           &&. (not_ . exists_ $ filter_
-                (\reservation ->
-                  (_reservesBid reservation `references_` boat)
-                    &&. (_reservesSid reservation `references_` sailor)
-                )
+                (\r -> joinOnBid b r &&. joinOnSid s r)
                 reserves
               )
       )
       boats
     )
     sailors
-  pure (pk sailor, _sailorSname sailor)
+  pure (pk s, _sailorSname s)
 
 pset1Query3 = runQuery $ runSelectReturningList $ select $ join
   sailors
-  (let haveReservedRed = join
-         reserves
-         (filter_ (\boat -> _boatColor boat ==. val_ "red") boats)
-         (\reservation boat -> _reservesBid reservation `references_` boat)
-         (\reservation boat -> (_reservesSid reservation))
-       haveReservedNonRed = join
-         reserves
-         (filter_ (\boat -> _boatColor boat /=. val_ "red") boats)
-         (\reservation boat -> _reservesBid reservation `references_` boat)
-         (\reservation boat -> (_reservesSid reservation))
+  (let haveReservedRed = join redBs reserves joinOnBid (\_ r -> _reservesSid r)
+       haveReservedNonRed =
+         join nonRedBs reserves joinOnBid (\_ r -> _reservesSid r)
    in  haveReservedRed `except_` haveReservedNonRed
   )
-  (\sailor sid -> sid `references_` sailor)
-  (\sailor sid -> (sid, _sailorSname sailor))
+  (\s sid -> sid `references_` s)
+  (\s sid -> (sid, _sailorSname s))
 
 pset1Query4 = runQuery $ do
   runSelectReturningList $ selectWith $ do
-    reservesByBoat <- selecting $ aggregate_
-      (\reservation -> (group_ (_reservesBid reservation), as_ @Int32 countAll_)
-      )
+    reservesByB <- selecting $ aggregate_
+      (\r -> (group_ (_reservesBid r), as_ @Int32 countAll_))
       reserves
     pure $ filter_
       (\(_, _, count) -> count ==. fromMaybe_
         0
-        ( subquery_
-        $ aggregate_ (\(_, count) -> max_ count) (reuse reservesByBoat)
-        )
+        (subquery_ $ aggregate_ (\(_, count) -> max_ count) $ reuse reservesByB)
       )
-      (join (reuse reservesByBoat)
+      (join (reuse reservesByB)
             boats
-            (\(bid, count) boat -> bid `references_` boat)
-            (\(bid, count) boat -> (bid, _boatBname boat, count))
+            (\(bid, count) b -> bid `references_` b)
+            (\(bid, count) b -> (bid, _boatBname b, count))
       )
 
 pset1Query5 = runQuery $ runSelectReturningList $ select $ do
-  sailor <- nub_ $ except_
+  s <- nub_ $ except_
     sailors
-    (join
-      (filter_ (\boat -> _boatColor boat ==. val_ "red") boats)
-      (join
-        sailors
-        reserves
-        (\sailor reservation -> _reservesSid reservation `references_` sailor)
-        (,)
-      )
-      (\boat (_, reservation) -> _reservesBid reservation `references_` boat)
-      (\_ (sailor, _) -> sailor)
+    (join redBs
+          (join sailors reserves joinOnSid (,))
+          (\b (_, r) -> joinOnBid b r)
+          (\_ (s, _) -> s)
     )
-  pure (pk sailor, _sailorSname sailor)
+  pure (pk s, _sailorSname s)
 
 pset1Query6 = do
-  -- some type jiggling to simply return an int
-  result <-
-    runQuery
-    $ runSelectReturningOne
-    $ select
-    -- need to cast `age` to fp type otherwise it would return an int
-    $ do
-        count <-
-          aggregate_ (\sailor -> avg_ $ cast_ (_sailorAge sailor) double)
-            $ filter_ (\sailor -> _sailorRating sailor ==. val_ 10) sailors
-        pure $ fromMaybe_ 0 count
+  result <- runQuery $ runSelectReturningOne $ select $ do
+    count <- aggregate_ (\s -> avg_ $ cast_ (_sailorAge s) double)
+      $ filter_ (\s -> _sailorRating s ==. val_ 10) sailors
+    pure $ fromMaybe_ 0 count
   pure $ fromMaybe 0 result
 
 pset1Query7 =
@@ -121,53 +99,36 @@ pset1Query7 =
     $ orderBy_ (\(_, _, rating, _) -> asc_ rating)
     $ join
         sailors
-        (aggregate_
-          (\sailor -> (group_ (_sailorRating sailor), min_ (_sailorAge sailor)))
-          sailors
+        (aggregate_ (\s -> (group_ (_sailorRating s), min_ (_sailorAge s)))
+                    sailors
         )
-        (\sailor (rating, age) ->
-          (_sailorRating sailor ==. rating)
-            &&. (_sailorAge sailor ==. fromMaybe_ (-1) age)
+        (\s (rating, age) ->
+          (_sailorRating s ==. rating)
+            &&. (_sailorAge s ==. fromMaybe_ (-1) age)
         )
-        (\sailor _ ->
-          ( pk sailor
-          , _sailorSname sailor
-          , _sailorRating sailor
-          , _sailorAge sailor
-          )
-        )
+        (\s _ -> (pk s, _sailorSname s, _sailorRating s, _sailorAge s))
 
 pset1Query8 = do
   runQuery $ runSelectReturningList $ selectWith $ do
-    reservationCountByBoat <-
+    rCountByB <-
       selecting
       $ aggregate_
           (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int32 countAll_))
-      $ join
-          boats
-          reserves
-          (\boat reservation -> _reservesBid reservation `references_` boat)
-          (\boat reservation ->
-            (_reservesSid reservation, _reservesBid reservation)
-          )
+      $ join boats reserves joinOnBid (\_ r -> (_reservesSid r, _reservesBid r))
     pure
-      $ (let maxReservationsByBoat =
+      $ (let maxRsByB =
                aggregate_ (\(bid, sid, count) -> (group_ bid, max_ count))
-                 $ reuse reservationCountByBoat
-             maxReservationsByBoatUsers = join
-               maxReservationsByBoat
-               (reuse reservationCountByBoat)
+                 $ reuse rCountByB
+             maxRsByBUsers = join
+               maxRsByB
+               (reuse rCountByB)
                (\(bid1, count1) (bid2, _, count2) ->
                  (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
                )
                (\_ a -> a)
-             maxReservationsByBoatUserDetails =
-               orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
-                 maxReservationsByBoatUsers
-                 sailors
-                 (\(bid, sid, count) sailor -> sid `references_` sailor)
-                 (\(bid, sid, count) sailor ->
-                   (bid, sid, _sailorSname sailor, count)
-                 )
-         in  maxReservationsByBoatUserDetails
+         in  orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
+               maxRsByBUsers
+               sailors
+               (\(_, sid, _) s -> sid `references_` s)
+               (\(bid, sid, count) s -> (bid, sid, _sailorSname s, count))
         )
