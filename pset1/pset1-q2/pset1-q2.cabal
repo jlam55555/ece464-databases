@@ -37,11 +37,11 @@ library
     , QuickCheck
     , base >=4.7 && <5
     , beam-core
-    , beam-mysql
+    , beam-postgres
     , hashable
     , hspec
     , hspec-contrib
-    , mysql-simple
+    , postgresql-simple
     , text
     , time
     , unordered-containers
@@ -59,11 +59,11 @@ executable pset1-q2-exe
     , QuickCheck
     , base >=4.7 && <5
     , beam-core
-    , beam-mysql
+    , beam-postgres
     , hashable
     , hspec
     , hspec-contrib
-    , mysql-simple
+    , postgresql-simple
     , pset1-q2
     , text
     , time
@@ -84,11 +84,11 @@ test-suite pset1-q2-test
     , QuickCheck
     , base >=4.7 && <5
     , beam-core
-    , beam-mysql
+    , beam-postgres
     , hashable
     , hspec
     , hspec-contrib
-    , mysql-simple
+    , postgresql-simple
     , pset1-q2
     , text
     , time

@@ -19,9 +19,16 @@ packages:
       size: 2704
     hackage: beam-core-0.9.1.0@sha256:70659e3046bfecda49b1b921bf088899bad859ea649552c78d464e634740b107,5282
 - original:
-    hackage: beam-mysql-0.2.0.0
+    hackage: beam-migrate-0.5.1.0
   completed:
     pantry-tree:
-      sha256: ed62694a4bf6afc18ab12dd7227d3aa64a575f387efe3b35fe95b1f3ce71a940
-      size: 389
-    hackage: beam-mysql-0.2.0.0@sha256:6c64358de5094463a70e8c71dbc99a38ae937d04a44cee9858e8a0779bb7b8dd,2282
+      sha256: 0c8da13ee23820cbb14e3dd2794a0e086a08c830e7b28f3336d031c93eb14842
+      size: 1721
+    hackage: beam-migrate-0.5.1.0@sha256:55d5fae17584c14b654d19d9de01f0a65e6c229561ce4fd12de92eba98b39105,4923
+- original:
+    hackage: beam-postgres-0.5.1.0
+  completed:
+    pantry-tree:
+      sha256: 04c64da8eda1dd67145d82cd1d10395bd99d04e7aa9767d509929ebf7d9a336a
+      size: 1692
+    hackage: beam-postgres-0.5.1.0@sha256:d72f287c966819f9a692c82c79a08b08483c27a32a2671a9c7b2ec4b0b73e473,4392

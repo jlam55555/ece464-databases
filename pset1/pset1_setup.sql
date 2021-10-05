@@ -19,8 +19,8 @@ CREATE TABLE reserves (
 
 CREATE TABLE boats (
        bid INT PRIMARY KEY, 
-       bname char(20), 
-       color char(10), 
+       bname VARCHAR(20), 
+       color VARCHAR(10), 
        length INT
 );
 

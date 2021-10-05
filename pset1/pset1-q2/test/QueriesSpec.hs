@@ -23,8 +23,8 @@ spec = describe "Checking correct output for queries" $ do
         result <- pset1Query1
         shouldBe (fromList result) $ fromList
           -- bid, bname, # reservations
-          [ (BoatId 101, "INTerlake", 2)
-          , (BoatId 102, "INTerlake", 3)
+          [ (BoatId 101, "Interlake", 2)
+          , (BoatId 102, "Interlake", 3)
           , (BoatId 103, "Clipper"  , 3)
           , (BoatId 104, "Clipper"  , 5)
           , (BoatId 105, "Marine"   , 3)

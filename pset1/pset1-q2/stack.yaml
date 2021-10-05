@@ -43,7 +43,8 @@ packages:
 # extra-deps: []
 extra-deps:
 - beam-core-0.9.1.0
-- beam-mysql-0.2.0.0
+- beam-migrate-0.5.1.0
+- beam-postgres-0.5.1.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

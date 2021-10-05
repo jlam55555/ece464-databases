@@ -15,19 +15,20 @@ module Schema where
 import           Util
 
 import           Database.Beam
-import           Database.Beam.MySQL
-import           Database.MySQL.Simple
+import           Database.Beam.Postgres
+import           Database.PostgreSQL.Simple
 
 import           Data.Hashable
+import           Data.Int
 import           Data.Text
 import           Data.Time
 
 -- sailor schema
 data SailorT f = Sailor
-  { _sailorSid    :: C f Int
+  { _sailorSid    :: C f Int32
   , _sailorSname  :: C f Text
-  , _sailorRating :: C f Int
-  , _sailorAge    :: C f Int
+  , _sailorRating :: C f Int32
+  , _sailorAge    :: C f Int32
   }
   deriving Generic
 
@@ -35,16 +36,16 @@ type Sailor = SailorT Identity
 type SailorId = PrimaryKey SailorT Identity
 
 instance Table SailorT where
-  data PrimaryKey SailorT f = SailorId (C f Int)
+  data PrimaryKey SailorT f = SailorId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = SailorId . _sailorSid
 
 -- boat schema
 data BoatT f = Boat
-  { _boatBid    :: C f Int
+  { _boatBid    :: C f Int32
   , _boatBname  :: C f Text
   , _boatColor  :: C f Text
-  , _boatLength :: C f Int
+  , _boatLength :: C f Int32
   }
   deriving Generic
 
@@ -52,7 +53,7 @@ type Boat = BoatT Identity
 type BoatId = PrimaryKey BoatT Identity
 
 instance Table BoatT where
-  data PrimaryKey BoatT f = BoatId (C f Int)
+  data PrimaryKey BoatT f = BoatId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = BoatId . _boatBid
 
@@ -95,13 +96,13 @@ sailorDb = defaultDbSettings `withDbModification` dbModification
   }
 
 -- convenience shorthands
-sailors :: Q MySQL SailorDb s (SailorT (QExpr MySQL s))
+sailors :: Q Postgres SailorDb s (SailorT (QExpr Postgres s))
 sailors = all_ $ _sailorsSailors sailorDb
 
-boats :: Q MySQL SailorDb s (BoatT (QExpr MySQL s))
+boats :: Q Postgres SailorDb s (BoatT (QExpr Postgres s))
 boats = all_ $ _sailorsBoats sailorDb
 
-reserves :: Q MySQL SailorDb s (ReservesT (QExpr MySQL s))
+reserves :: Q Postgres SailorDb s (ReservesT (QExpr Postgres s))
 reserves = all_ $ _sailorsReserves sailorDb
 
 -- deriving instances

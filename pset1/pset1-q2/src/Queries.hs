@@ -6,6 +6,7 @@ module Queries where
 import           Schema
 import           Util
 
+import           Data.Int
 import           Data.Maybe
 import           Database.Beam
 
@@ -18,7 +19,7 @@ pset1Query1 =
         boats
         ( aggregate_
             (\(boat, reservation) ->
-              (group_ (_reservesBid reservation), as_ @Int countAll_)
+              (group_ (_reservesBid reservation), as_ @Int32 countAll_)
             )
         $ join
             boats
@@ -69,12 +70,12 @@ pset1Query4 = runQuery $ do
     $ select
     $ (let reservesByBoat = aggregate_
              (\reservation ->
-               (group_ (_reservesBid reservation), as_ @Int countAll_)
+               (group_ (_reservesBid reservation), as_ @Int32 countAll_)
              )
              reserves
            reservesByBoat2 = aggregate_
              (\reservation ->
-               (group_ (_reservesBid reservation), as_ @Int countAll_)
+               (group_ (_reservesBid reservation), as_ @Int32 countAll_)
              )
              reserves
            maximumReservesByBoat = filter_
@@ -107,7 +108,6 @@ pset1Query5 = runQuery $ runSelectReturningList $ select $ do
       (\_ (sailor, _) -> sailor)
     )
   pure (pk sailor, _sailorSname sailor)
-
 
 pset1Query6 = do
   -- some type jiggling to simply return an int
@@ -147,52 +147,36 @@ pset1Query7 =
         )
 
 pset1Query8 = do
-  runQuery
-    $ runSelectReturningList
-    $ select
-    $ (let
-         reservationCountByBoat =
-           aggregate_
-               (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int countAll_))
-             $ join
-                 boats
-                 reserves
-                 (\boat reservation ->
-                   _reservesBid reservation `references_` boat
+  runQuery $ runSelectReturningList $ selectWith $ do
+    reservationCountByBoat <-
+      selecting
+      $ aggregate_
+          (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int32 countAll_))
+      $ join
+          boats
+          reserves
+          (\boat reservation -> _reservesBid reservation `references_` boat)
+          (\boat reservation ->
+            (_reservesSid reservation, _reservesBid reservation)
+          )
+    pure
+      $ (let maxReservationsByBoat =
+               aggregate_ (\(bid, sid, count) -> (group_ bid, max_ count))
+                 $ reuse reservationCountByBoat
+             maxReservationsByBoatUsers = join
+               maxReservationsByBoat
+               (reuse reservationCountByBoat)
+               (\(bid1, count1) (bid2, _, count2) ->
+                 (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
+               )
+               (\_ a -> a)
+             maxReservationsByBoatUserDetails =
+               orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
+                 maxReservationsByBoatUsers
+                 sailors
+                 (\(bid, sid, count) sailor -> sid `references_` sailor)
+                 (\(bid, sid, count) sailor ->
+                   (bid, sid, _sailorSname sailor, count)
                  )
-                 (\boat reservation ->
-                   (_reservesSid reservation, _reservesBid reservation)
-                 )
-         maxReservationsByBoat = aggregate_
-           (\(bid, sid, count) -> (group_ bid, max_ count))
-           reservationCountByBoat
-         reservationCountByBoat2 =
-           aggregate_
-               (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int countAll_))
-             $ join
-                 boats
-                 reserves
-                 (\boat reservation ->
-                   _reservesBid reservation `references_` boat
-                 )
-                 (\boat reservation ->
-                   (_reservesSid reservation, _reservesBid reservation)
-                 )
-         maxReservationsByBoatUsers = join
-           maxReservationsByBoat
-           reservationCountByBoat2
-           (\(bid1, count1) (bid2, _, count2) ->
-             (bid1 ==. bid2) &&. (fromMaybe_ 0 count1 ==. count2)
-           )
-           (\_ a -> a)
-         maxReservationsByBoatUserDetails =
-           orderBy_ (\(BoatId bid, _, _, _) -> asc_ bid) $ join
-             maxReservationsByBoatUsers
-             sailors
-             (\(bid, sid, count) sailor -> sid `references_` sailor)
-             (\(bid, sid, count) sailor ->
-               (bid, sid, _sailorSname sailor, count)
-             )
-       in
-         maxReservationsByBoatUserDetails
-      )
+         in  maxReservationsByBoatUserDetails
+        )
