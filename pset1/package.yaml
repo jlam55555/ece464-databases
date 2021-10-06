@@ -1,6 +1,6 @@
-name:                pset1-q2
+name:                pset1
 version:             0.1.0.0
-github:              "githubuser/pset1-q2"
+github:              "githubuser/pset1"
 license:             BSD3
 author:              "Author name here"
 maintainer:          "example@example.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/pset1-q2#readme>
+description:         Please see the README on GitHub at <https://github.com/githubuser/pset1#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -32,12 +32,14 @@ dependencies:
 - HUnit
 - unordered-containers
 - hashable
+- bytestring
+- utf8-string
 
 library:
   source-dirs: src
 
 executables:
-  pset1-q2-exe:
+  pset1-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -45,10 +47,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - pset1-q2
+    - pset1
 
 tests:
-  pset1-q2-test:
+  pset1-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -56,4 +58,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - pset1-q2
+    - pset1

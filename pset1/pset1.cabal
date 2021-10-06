@@ -4,11 +4,11 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           pset1-q2
+name:           pset1
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/pset1-q2#readme>
-homepage:       https://github.com/githubuser/pset1-q2#readme
-bug-reports:    https://github.com/githubuser/pset1-q2/issues
+description:    Please see the README on GitHub at <https://github.com/githubuser/pset1#readme>
+homepage:       https://github.com/githubuser/pset1#readme
+bug-reports:    https://github.com/githubuser/pset1/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2021 Author name here
@@ -21,7 +21,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/pset1-q2
+  location: https://github.com/githubuser/pset1
 
 library
   exposed-modules:
@@ -29,7 +29,7 @@ library
       Schema
       Util
   other-modules:
-      Paths_pset1_q2
+      Paths_pset1
   hs-source-dirs:
       src
   build-depends:
@@ -38,6 +38,7 @@ library
     , base >=4.7 && <5
     , beam-core
     , beam-postgres
+    , bytestring
     , hashable
     , hspec
     , hspec-contrib
@@ -45,12 +46,13 @@ library
     , text
     , time
     , unordered-containers
+    , utf8-string
   default-language: Haskell2010
 
-executable pset1-q2-exe
+executable pset1-exe
   main-is: Main.hs
   other-modules:
-      Paths_pset1_q2
+      Paths_pset1
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -60,22 +62,24 @@ executable pset1-q2-exe
     , base >=4.7 && <5
     , beam-core
     , beam-postgres
+    , bytestring
     , hashable
     , hspec
     , hspec-contrib
     , postgresql-simple
-    , pset1-q2
+    , pset1
     , text
     , time
     , unordered-containers
+    , utf8-string
   default-language: Haskell2010
 
-test-suite pset1-q2-test
+test-suite pset1-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
       QueriesSpec
-      Paths_pset1_q2
+      Paths_pset1
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -85,12 +89,14 @@ test-suite pset1-q2-test
     , base >=4.7 && <5
     , beam-core
     , beam-postgres
+    , bytestring
     , hashable
     , hspec
     , hspec-contrib
     , postgresql-simple
-    , pset1-q2
+    , pset1
     , text
     , time
     , unordered-containers
+    , utf8-string
   default-language: Haskell2010

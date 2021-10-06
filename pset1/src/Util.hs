@@ -6,16 +6,19 @@ import           Database.Beam
 import           Database.Beam.Postgres
 import           Database.PostgreSQL.Simple
 
+import           Data.ByteString
+import           Data.ByteString.UTF8
 import           Data.Time
 
 -- hardcoded for now -- should be okay
-dbConnection = connect defaultConnectInfo { connectUser     = "ece464"
-                                          , connectDatabase = "ece464_pset1"
-                                          }
+connectInfo = defaultConnectInfo { connectUser     = "ece464"
+                                 , connectDatabase = "ece464_pset1"
+                                 }
+dbConnection = connect connectInfo
 
 -- helper for running queries with tebug printing
 runQuery query =
-  dbConnection >>= \conn -> runBeamPostgresDebug putStrLn conn query
+  dbConnection >>= \conn -> runBeamPostgresDebug Prelude.putStrLn conn query
 
 -- abstracted syntax for joins; easier to use than Beam's `join_`
 join tab1 tab2 cond res = do
