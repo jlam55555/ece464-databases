@@ -19,10 +19,13 @@ nonRedBs = filter_ (not_ . isRed) boats
 joinOnBid b r = _reservesBid r `references_` b
 joinOnSid s r = _reservesSid r `references_` s
 
+conn = getDbConn "ece464_pset1"
+run = runQuery conn
+
 -- sailors, boats, and reservations abbreviated as s, b, and r, respectively
 
 pset1Query1 =
-  runQuery
+  run
     $ runSelectReturningList
     $ select
     $ orderBy_ (\(BoatId bid, _, _) -> asc_ bid)
@@ -34,7 +37,7 @@ pset1Query1 =
         (\b (bid, _) -> bid `references_` b)
         (\b (bid, count) -> (bid, (_boatBname b), count))
 
-pset1Query2 = runQuery $ runSelectReturningList $ select $ do
+pset1Query2 = run $ runSelectReturningList $ select $ do
   s <- filter_
     (\s -> not_ . exists_ $ filter_
       (\b ->
@@ -49,7 +52,7 @@ pset1Query2 = runQuery $ runSelectReturningList $ select $ do
     sailors
   pure (pk s, _sailorSname s)
 
-pset1Query3 = runQuery $ runSelectReturningList $ select $ join
+pset1Query3 = run $ runSelectReturningList $ select $ join
   sailors
   (let haveReservedRed = join redBs reserves joinOnBid (\_ r -> _reservesSid r)
        haveReservedNonRed =
@@ -59,7 +62,7 @@ pset1Query3 = runQuery $ runSelectReturningList $ select $ join
   (\s sid -> sid `references_` s)
   (\s sid -> (sid, _sailorSname s))
 
-pset1Query4 = runQuery $ runSelectReturningList $ selectWith $ do
+pset1Query4 = run $ runSelectReturningList $ selectWith $ do
   reservesByB <- selecting $ aggregate_
     (\r -> (group_ (_reservesBid r), as_ @Int32 countAll_))
     reserves
@@ -74,7 +77,7 @@ pset1Query4 = runQuery $ runSelectReturningList $ selectWith $ do
           (\(bid, count) b -> (bid, _boatBname b, count))
     )
 
-pset1Query5 = runQuery $ runSelectReturningList $ select $ do
+pset1Query5 = run $ runSelectReturningList $ select $ do
   s <- nub_ $ except_
     sailors
     (join redBs
@@ -85,14 +88,14 @@ pset1Query5 = runQuery $ runSelectReturningList $ select $ do
   pure (pk s, _sailorSname s)
 
 pset1Query6 = do
-  result <- runQuery $ runSelectReturningOne $ select $ do
+  result <- run $ runSelectReturningOne $ select $ do
     count <- aggregate_ (\s -> avg_ $ cast_ (_sailorAge s) double)
       $ filter_ (\s -> _sailorRating s ==. val_ 10) sailors
     pure $ fromMaybe_ 0 count
   pure $ fromMaybe 0 result
 
 pset1Query7 =
-  runQuery
+  run
     $ runSelectReturningList
     $ select
     $ orderBy_ (\(_, _, rating, _) -> asc_ rating)
@@ -107,7 +110,7 @@ pset1Query7 =
         )
         (\s _ -> (pk s, _sailorSname s, _sailorRating s, _sailorAge s))
 
-pset1Query8 = runQuery $ runSelectReturningList $ selectWith $ do
+pset1Query8 = run $ runSelectReturningList $ selectWith $ do
   rCountByB <-
     selecting
     $ aggregate_ (\(sid, bid) -> (group_ bid, group_ sid, as_ @Int32 countAll_))
