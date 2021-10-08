@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module QueriesSpec
+module PsetOne.PartTwo.QueriesSpec
   ( spec
   ) where
 
