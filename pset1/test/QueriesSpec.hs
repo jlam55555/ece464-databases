@@ -4,9 +4,11 @@ module QueriesSpec
   ( spec
   ) where
 
+import           PsetOne.PartTwo.Queries
+import           PsetOne.PartTwo.Schema
+
 import           Data.HashSet
-import           Queries
-import           Schema
+
 import           Test.Hspec
 
 -- this assumes the test fixture from ../../pset1_setup.sql

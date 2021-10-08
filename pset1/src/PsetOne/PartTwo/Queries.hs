@@ -2,10 +2,10 @@
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE FlexibleContexts      #-}
 
-module Queries where
+module PsetOne.PartTwo.Queries where
 
-import           Schema
-import           Util
+import           PsetOne.PartTwo.Schema
+import           PsetOne.Util
 
 import           Data.Int
 import           Data.Maybe

@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Util where
+module PsetOne.Util where
 
 import           Database.Beam
 import           Database.Beam.Postgres

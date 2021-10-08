@@ -10,9 +10,9 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 
-module Schema where
+module PsetOne.PartTwo.Schema where
 
-import           Util
+import           PsetOne.Util
 
 import           Database.Beam
 import           Database.Beam.Postgres

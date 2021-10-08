@@ -38,16 +38,16 @@ dependencies:
 library:
   source-dirs: src
 
-executables:
-  pset1-exe:
-    main:                Main.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - pset1
+# executables:
+#   pset1-exe:
+#     main:                Main.hs
+#     source-dirs:         app
+#     ghc-options:
+#     - -threaded
+#     - -rtsopts
+#     - -with-rtsopts=-N
+#     dependencies:
+#     - pset1
 
 tests:
   pset1-test:
