@@ -2,6 +2,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module PsetOne.PartThree.Fixture where
 
@@ -162,10 +164,7 @@ createFixture = do
   insertClockTimes
     [(marsha, LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0), True)]
   insertPayments
-    [ ( Sailor (val_ (sailorSid hershel))
-               (val_ (sailorSname hershel))
-               (val_ (sailorRating hershel))
-               (val_ (sailorDob hershel))
+    [ ( sailorReinterpret hershel
       , 32
       , LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0)
       , 32
@@ -175,3 +174,7 @@ createFixture = do
   -- clockIn marsha (2021, 10, 04) (09, 01, 00)
   -- putStrLn (show (pk marsha))
   pure newSailors
+
+-- need this to allow use of sailors due to type differences
+sailorReinterpret Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
+  = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
