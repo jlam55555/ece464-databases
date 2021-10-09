@@ -46,15 +46,12 @@ makeInserter table entryConverter entries =
     entries
 
 insertSailors = makeInserter sailorsTable $ \(name, rating, (yyyy, mm, dd)) ->
-  Sailor default_ (val_ name) (val_ rating) (val_ (fromGregorian yyyy mm dd))
+  Sailor default_ (val_ name) (val_ rating) (val_ $ makeDay yyyy mm dd)
 
 insertEmployees =
   makeInserter employeesTable
-    $ (\(name, (yyyy, mm, dd), wage) -> Employee
-        default_
-        (val_ name)
-        (val_ (fromGregorian yyyy mm dd))
-        (val_ wage)
+    $ (\(name, (yyyy, mm, dd), wage) ->
+        Employee default_ (val_ name) (val_ $ makeDay yyyy mm dd) (val_ wage)
       )
 
 insertBoats =
@@ -162,19 +159,15 @@ createFixture = do
         , 743
         )
       ]
-  insertClockTimes
-    [(marsha, LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0), True)]
-  insertPayments
-    [ ( hershel
-      , 32
-      , LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0)
-      , 32
-      , True
-      )
-    ]
-  -- clockIn marsha (2021, 10, 04) (09, 01, 00)
-  -- putStrLn (show (pk marsha))
+  insertClockTimes [(marsha, makeTime 2000 1 1 9 0 0, True)]
+  insertPayments [(hershel, 32, makeTime 2000 1 1 9 0 0, 32, True)]
   pure newSailors
 
+-- helper functions for time literals
+makeDay = fromGregorian
+makeTime yyyy mM dd hh mm ss =
+  LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss)
+
+-- helper function to convert to rescope sailor literal
 rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
   = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
