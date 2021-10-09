@@ -66,7 +66,21 @@ insertEquipment =
         Equipment default_ (val_ name) (val_ dsc) (val_ count) (val_ cost)
       )
 
--- TODO: work hours
+-- TODO: factor this with `makeInserter` if possible
+insertClockTimes
+  :: (forall s . [(EmployeeT (QExpr Postgres s), LocalTime, Bool)])
+  -> IO [ClockTime]
+insertClockTimes entries =
+  run
+    $ runInsertReturningList
+    $ insert clockTimesTable
+    $ insertExpressions
+    $ map
+        (\(employee, timestamp, clockType) ->
+          ClockTime (pk employee) (val_ timestamp) (val_ clockType)
+        )
+        entries
+
 -- TODO: reservations
 -- TODO: incidents
 -- TODO: payments
