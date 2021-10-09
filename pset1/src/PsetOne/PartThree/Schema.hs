@@ -20,6 +20,8 @@ import           Database.Beam.Backend.SQL.Types
 import           Database.Beam.Postgres
 import           Database.PostgreSQL.Simple
 
+import           Control.Exception
+
 import           Data.Hashable
 import           Data.Int
 import           Data.Text
@@ -287,14 +289,14 @@ getTable
 getTable tableSelector =
   (tableSelector companyDb, all_ $ tableSelector companyDb)
 
-(sailor, sailors) = getTable companySailors
-(employee, employees) = getTable companyEmployees
-(boat, boats) = getTable companyBoats
-(reserve, reserves) = getTable companyReserves
-(clockTime, clockTimes) = getTable companyClockTimes
-(equipmen, equipment) = getTable companyEquipment
-(equipmentSale, equipmentSales) = getTable companyEquipmentSales
-(payment, payments) = getTable companyPayments
+(sailorsTable, sailors) = getTable companySailors
+(employeesTable, employees) = getTable companyEmployees
+(boatsTable, boats) = getTable companyBoats
+(reservesTable, reserves) = getTable companyReserves
+(clockTimesTable, clockTimes) = getTable companyClockTimes
+(equipmentTable, equipment) = getTable companyEquipment
+(equipmentSalesTable, equipmentSales) = getTable companyEquipmentSales
+(paymentsTable, payments) = getTable companyPayments
 
 -- database connection object
 conn = getDbConn "ece464_pset1_part3"
@@ -305,4 +307,11 @@ run = runQuery conn
 -- set up and destroy the tables in the database
 setupSchema = runSqlFile conn "res/pset1_part3_setup.sql"
 cleanupSchema = runSqlFile conn "res/pset1_part3_cleanup.sql"
-resetSchema = cleanupSchema >> setupSchema
+
+-- reset schema; delete and then recreate tables
+-- (if tables do not exist, simply create them)
+resetSchema = do
+  result <- try cleanupSchema
+  case (result :: Either SqlError Int64) of
+    Right _   -> setupSchema
+    Left  err -> setupSchema
