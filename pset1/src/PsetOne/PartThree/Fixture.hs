@@ -15,6 +15,7 @@ import           Database.Beam.Postgres
 import           Database.Beam.Backend.SQL
 import           Database.Beam.Backend.Types
 
+import           Data.Fixed
 import           Data.Int
 import           Data.Text                      ( Text )
 import           Data.Time
@@ -67,19 +68,39 @@ insertEquipment =
       )
 
 -- TODO: factor this with `makeInserter` if possible
-insertClockTimes
-  :: (forall s . [(EmployeeT (QExpr Postgres s), LocalTime, Bool)])
-  -> IO [ClockTime]
+-- insertClockTimes
+--   :: (forall s . [(EmployeeT (QExpr Postgres s), LocalTime, Bool)])
+--   -> IO [ClockTime]
 insertClockTimes entries =
-  run
-    $ runInsertReturningList
-    $ insert clockTimesTable
-    $ insertExpressions
-    $ map
-        (\(employee, timestamp, clockType) ->
-          ClockTime (pk employee) (val_ timestamp) (val_ clockType)
-        )
-        entries
+  run $ runInsertReturningList $ insert clockTimesTable $ insertValues $ map
+    (\(employee, timestamp, clockType) ->
+      ClockTime (pk employee) timestamp clockType
+    )
+    entries
+
+-- clockIn, clockOut
+--   :: (forall s . EmployeeT (QExpr Postgres s))
+--   -> (Integer, Int, Int)
+--   -> (Int, Int, Pico)
+--   -> IO [ClockTime]
+-- clockIn employee (yyyy, mM, dd) (hh, mm, ss) = insertClockTimes
+--   [(employee, LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss), True)]
+-- clockOut employee (yyyy, mM, dd) (hh, mm, ss) = insertClockTimes
+--   [(employee, LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss), False)]
+
+insertPayments
+  :: (forall s . [(SailorT (QExpr Postgres s), Int32, LocalTime, Int32, Bool)])
+  -> IO [Payment]
+insertPayments entries =
+  run $ runInsertReturningList $ insert paymentsTable $ insertExpressions $ map
+    (\(sailor, cost, time, paymentType, paid) -> Payment default_
+                                                         (pk sailor)
+                                                         (val_ cost)
+                                                         (val_ time)
+                                                         (val_ paymentType)
+                                                         (val_ paid)
+    )
+    entries
 
 -- TODO: reservations
 -- TODO: incidents
@@ -138,4 +159,19 @@ createFixture = do
         , 743
         )
       ]
+  insertClockTimes
+    [(marsha, LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0), True)]
+  insertPayments
+    [ ( Sailor (val_ (sailorSid hershel))
+               (val_ (sailorSname hershel))
+               (val_ (sailorRating hershel))
+               (val_ (sailorDob hershel))
+      , 32
+      , LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0)
+      , 32
+      , True
+      )
+    ]
+  -- clockIn marsha (2021, 10, 04) (09, 01, 00)
+  -- putStrLn (show (pk marsha))
   pure newSailors
