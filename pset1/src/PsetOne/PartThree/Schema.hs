@@ -27,7 +27,7 @@ import           Data.Time
 
 -- table schemas
 data SailorT f = Sailor
-  { sailorSid    :: C f Serial
+  { sailorSid    :: C f Int32
   , sailorSname  :: C f Text
   , sailorRating :: C f Int32
   , sailorDob    :: C f Day
@@ -35,7 +35,7 @@ data SailorT f = Sailor
   deriving Generic
 
 data EmployeeT f = Employee
-  { employeeEid   :: C f Serial
+  { employeeEid   :: C f Int32
   , employeeEname :: C f Text
   , employeeDob   :: C f Day
   , employeeWage  :: C f Int32
@@ -43,7 +43,7 @@ data EmployeeT f = Employee
   deriving Generic
 
 data BoatT f = Boat
-  { boatBid    :: C f Serial
+  { boatBid    :: C f Int32
   , boatBname  :: C f Text
   , boatColor  :: C f Text
   , boatLength :: C f Int32
@@ -51,7 +51,7 @@ data BoatT f = Boat
   deriving Generic
 
 data ReservesT f = Reserves
-  { reservesRid :: C f Serial
+  { reservesRid :: C f Int32
   , reservesSid :: PrimaryKey SailorT f
   , reservesBid :: PrimaryKey BoatT f
   , reservesEid :: PrimaryKey EmployeeT f
@@ -68,7 +68,7 @@ data ClockTimeT f = ClockTime
   deriving Generic
 
 data IncidentT f = Incident
-  { incidentIid        :: C f Serial
+  { incidentIid        :: C f Int32
   , incidentRid        :: PrimaryKey ReservesT f
   , incidentTime       :: C f LocalTime
   , incidentSev        :: C f Int32
@@ -81,7 +81,7 @@ data IncidentT f = Incident
   deriving Generic
 
 data EquipmentT f = Equipment
-  { equipmentEid   :: C f Serial
+  { equipmentEid   :: C f Int32
   , equipmentName  :: C f Text
   , equipmentDsc   :: C f Text
   , equipmentCount :: C f Int32
@@ -90,7 +90,7 @@ data EquipmentT f = Equipment
   deriving Generic
 
 data PaymentT f = Payment
-  { paymentPid  :: C f Serial
+  { paymentPid  :: C f Int32
   , paymentSid  :: PrimaryKey SailorT f
   , paymentCost :: C f Int32
   , paymentTime :: C f LocalTime
@@ -112,7 +112,7 @@ type Sailor = SailorT Identity
 type SailorId = PrimaryKey SailorT Identity
 instance Beamable SailorT
 instance Table SailorT where
-  data PrimaryKey SailorT f = SailorId (C f Serial)
+  data PrimaryKey SailorT f = SailorId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = SailorId . sailorSid
 deriving instance Show Sailor
@@ -125,7 +125,7 @@ type Employee = EmployeeT Identity
 type EmployeeId = PrimaryKey EmployeeT Identity
 instance Beamable EmployeeT
 instance Table EmployeeT where
-  data PrimaryKey EmployeeT f = EmployeeId (C f Serial)
+  data PrimaryKey EmployeeT f = EmployeeId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = EmployeeId . employeeEid
 deriving instance Show Employee
@@ -137,7 +137,7 @@ deriving instance Hashable EmployeeId
 type Boat = BoatT Identity
 type BoatId = PrimaryKey BoatT Identity
 instance Table BoatT where
-  data PrimaryKey BoatT f = BoatId (C f Serial)
+  data PrimaryKey BoatT f = BoatId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = BoatId . boatBid
 instance Beamable BoatT
@@ -151,7 +151,7 @@ type Reserves = ReservesT Identity
 type ReservesId = PrimaryKey ReservesT Identity
 instance Beamable ReservesT
 instance Table ReservesT where
-  data PrimaryKey ReservesT f = ReservesId (C f Serial)
+  data PrimaryKey ReservesT f = ReservesId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = ReservesId . reservesRid
 deriving instance Show Reserves
@@ -177,7 +177,7 @@ type Incident = IncidentT Identity
 type IncidentId = PrimaryKey IncidentT Identity
 instance Beamable IncidentT
 instance Table IncidentT where
-  data PrimaryKey IncidentT f = IncidentId (C f Serial)
+  data PrimaryKey IncidentT f = IncidentId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = IncidentId . incidentIid
 deriving instance Show Incident
@@ -190,7 +190,7 @@ type Equipment = EquipmentT Identity
 type EquipmentId = PrimaryKey EquipmentT Identity
 instance Beamable EquipmentT
 instance Table EquipmentT where
-  data PrimaryKey EquipmentT f = EquipmentId (C f Serial)
+  data PrimaryKey EquipmentT f = EquipmentId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = EquipmentId . equipmentEid
 deriving instance Show Equipment
@@ -216,7 +216,7 @@ type Payment = PaymentT Identity
 type PaymentId = PrimaryKey PaymentT Identity
 instance Beamable PaymentT
 instance Table PaymentT where
-  data PrimaryKey PaymentT f = PaymentId (C f Serial)
+  data PrimaryKey PaymentT f = PaymentId (C f Int32)
     deriving (Generic, Beamable)
   primaryKey = PaymentId . paymentPid
 deriving instance Show Payment
@@ -224,11 +224,6 @@ deriving instance Eq Payment
 deriving instance Show PaymentId
 deriving instance Eq PaymentId
 deriving instance Hashable PaymentId
-
--- type synonym for serial postgres type
-type Serial = SqlSerial Int32
-deriving instance Generic Serial
-deriving instance Hashable Serial
 
 -- allowing times to be hashable
 deriving instance Generic TimeOfDay
@@ -310,3 +305,4 @@ run = runQuery conn
 -- set up and destroy the tables in the database
 setupSchema = runSqlFile conn "res/pset1_part3_setup.sql"
 cleanupSchema = runSqlFile conn "res/pset1_part3_cleanup.sql"
+resetSchema = cleanupSchema >> setupSchema
