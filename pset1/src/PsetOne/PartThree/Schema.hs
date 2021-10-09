@@ -27,83 +27,83 @@ import           Data.Time
 
 -- table schemas
 data SailorT f = Sailor
-  { _sailorSid    :: C f Serial
-  , _sailorSname  :: C f Text
-  , _sailorRating :: C f Int32
-  , _sailorDob    :: C f Day
+  { sailorSid    :: C f Serial
+  , sailorSname  :: C f Text
+  , sailorRating :: C f Int32
+  , sailorDob    :: C f Day
   }
   deriving Generic
 
 data EmployeeT f = Employee
-  { _employeeEid   :: C f Serial
-  , _employeeEname :: C f Text
-  , _employeeDob   :: C f Day
-  , _employeeWage  :: C f Int
+  { employeeEid   :: C f Serial
+  , employeeEname :: C f Text
+  , employeeDob   :: C f Day
+  , employeeWage  :: C f Int32
   }
   deriving Generic
 
 data BoatT f = Boat
-  { _boatBid    :: C f Serial
-  , _boatBname  :: C f Text
-  , _boatColor  :: C f Text
-  , _boatLength :: C f Int32
+  { boatBid    :: C f Serial
+  , boatBname  :: C f Text
+  , boatColor  :: C f Text
+  , boatLength :: C f Int32
   }
   deriving Generic
 
 data ReservesT f = Reserves
-  { _reservesRid :: C f Serial
-  , _reservesSid :: PrimaryKey SailorT f
-  , _reservesBid :: PrimaryKey BoatT f
-  , _reservesEid :: PrimaryKey EmployeeT f
-  , _reservesPid :: PrimaryKey PaymentT f
-  , _reservesDay :: C f Day
+  { reservesRid :: C f Serial
+  , reservesSid :: PrimaryKey SailorT f
+  , reservesBid :: PrimaryKey BoatT f
+  , reservesEid :: PrimaryKey EmployeeT f
+  , reservesPid :: PrimaryKey PaymentT f
+  , reservesDay :: C f Day
   }
   deriving Generic
 
 data ClockTimeT f = ClockTime
-  { _clockTimeEid  :: PrimaryKey EmployeeT f
-  , _clockTimeTime :: C f LocalTime
-  , _clockTimeType :: C f Bool
+  { clocktimeEid  :: PrimaryKey EmployeeT f
+  , clocktimeTime :: C f LocalTime
+  , clocktimeType :: C f Bool
   }
   deriving Generic
 
 data IncidentT f = Incident
-  { _incidentIid        :: C f Serial
-  , _incidentRid        :: PrimaryKey ReservesT f
-  , _incidentTime       :: C f LocalTime
-  , _incidentSev        :: C f Int
-  , _incidentDsc        :: C f Text
-  , _incidentResoled    :: C f Bool
-  , _incidentEid        :: PrimaryKey EmployeeT f
-  , _incidentResolution :: C f Text
-  , _incidentPid        :: PrimaryKey PaymentT f
+  { incidentIid        :: C f Serial
+  , incidentRid        :: PrimaryKey ReservesT f
+  , incidentTime       :: C f LocalTime
+  , incidentSev        :: C f Int32
+  , incidentDsc        :: C f Text
+  , incidentResoled    :: C f Bool
+  , incidentEid        :: PrimaryKey EmployeeT f
+  , incidentResolution :: C f Text
+  , incidentPid        :: PrimaryKey PaymentT f
   }
   deriving Generic
 
 data EquipmentT f = Equipment
-  { _equipmentEid   :: C f Serial
-  , _equipmentName  :: C f Text
-  , _equipmentDsc   :: C f Text
-  , _equipmentCount :: C f Int
-  , _equipmentCost  :: C f Int
+  { equipmentEid   :: C f Serial
+  , equipmentName  :: C f Text
+  , equipmentDsc   :: C f Text
+  , equipmentCount :: C f Int32
+  , equipmentCost  :: C f Int32
   }
   deriving Generic
 
 data PaymentT f = Payment
-  { _paymentPid  :: C f Serial
-  , _paymentSid  :: PrimaryKey SailorT f
-  , _paymentCost :: C f Int
-  , _paymentTime :: C f LocalTime
-  , _paymentType :: C f Int
-  , _paymentPaid :: C f Bool
+  { paymentPid  :: C f Serial
+  , paymentSid  :: PrimaryKey SailorT f
+  , paymentCost :: C f Int32
+  , paymentTime :: C f LocalTime
+  , paymentType :: C f Int32
+  , paymentPaid :: C f Bool
   }
   deriving Generic
 
 data EquipmentSaleT f = EquipmentSale
-  { _equipmentSalePid   :: PrimaryKey PaymentT f
-  , _equipmentSaleEqid  :: PrimaryKey EquipmentT f
-  , _equipmentSaleSid   :: PrimaryKey SailorT f
-  , _equipmentSaleCount :: C f Int
+  { equipmentsalePid   :: PrimaryKey PaymentT f
+  , equipmentsaleEqid  :: PrimaryKey EquipmentT f
+  , equipmentsaleSid   :: PrimaryKey SailorT f
+  , equipmentsaleCount :: C f Int32
   }
   deriving Generic
 
@@ -114,7 +114,7 @@ instance Beamable SailorT
 instance Table SailorT where
   data PrimaryKey SailorT f = SailorId (C f Serial)
     deriving (Generic, Beamable)
-  primaryKey = SailorId . _sailorSid
+  primaryKey = SailorId . sailorSid
 deriving instance Show Sailor
 deriving instance Eq Sailor
 deriving instance Show SailorId
@@ -127,7 +127,7 @@ instance Beamable EmployeeT
 instance Table EmployeeT where
   data PrimaryKey EmployeeT f = EmployeeId (C f Serial)
     deriving (Generic, Beamable)
-  primaryKey = EmployeeId . _employeeEid
+  primaryKey = EmployeeId . employeeEid
 deriving instance Show Employee
 deriving instance Eq Employee
 deriving instance Show EmployeeId
@@ -139,7 +139,7 @@ type BoatId = PrimaryKey BoatT Identity
 instance Table BoatT where
   data PrimaryKey BoatT f = BoatId (C f Serial)
     deriving (Generic, Beamable)
-  primaryKey = BoatId . _boatBid
+  primaryKey = BoatId . boatBid
 instance Beamable BoatT
 deriving instance Show Boat
 deriving instance Eq Boat
@@ -153,7 +153,7 @@ instance Beamable ReservesT
 instance Table ReservesT where
   data PrimaryKey ReservesT f = ReservesId (C f Serial)
     deriving (Generic, Beamable)
-  primaryKey = ReservesId . _reservesRid
+  primaryKey = ReservesId . reservesRid
 deriving instance Show Reserves
 deriving instance Eq Reserves
 deriving instance Show ReservesId
@@ -166,12 +166,25 @@ instance Beamable ClockTimeT
 instance Table ClockTimeT where
   data PrimaryKey ClockTimeT f = ClockTimeId (PrimaryKey EmployeeT f) (C f LocalTime)
     deriving (Generic, Beamable)
-  primaryKey = ClockTimeId <$> _clockTimeEid <*> _clockTimeTime
+  primaryKey = ClockTimeId <$> clocktimeEid <*> clocktimeTime
 deriving instance Show ClockTime
 deriving instance Eq ClockTime
 deriving instance Show ClockTimeId
 deriving instance Eq ClockTimeId
 deriving instance Hashable ClockTimeId
+
+type Incident = IncidentT Identity
+type IncidentId = PrimaryKey IncidentT Identity
+instance Beamable IncidentT
+instance Table IncidentT where
+  data PrimaryKey IncidentT f = IncidentId (C f Serial)
+    deriving (Generic, Beamable)
+  primaryKey = IncidentId . incidentIid
+deriving instance Show Incident
+deriving instance Eq Incident
+deriving instance Show IncidentId
+deriving instance Eq IncidentId
+deriving instance Hashable IncidentId
 
 type Equipment = EquipmentT Identity
 type EquipmentId = PrimaryKey EquipmentT Identity
@@ -179,7 +192,7 @@ instance Beamable EquipmentT
 instance Table EquipmentT where
   data PrimaryKey EquipmentT f = EquipmentId (C f Serial)
     deriving (Generic, Beamable)
-  primaryKey = EquipmentId . _equipmentEid
+  primaryKey = EquipmentId . equipmentEid
 deriving instance Show Equipment
 deriving instance Eq Equipment
 deriving instance Show EquipmentId
@@ -192,7 +205,7 @@ instance Beamable EquipmentSaleT
 instance Table EquipmentSaleT where
   data PrimaryKey EquipmentSaleT f = EquipmentSaleId (PrimaryKey PaymentT f)
     deriving (Generic, Beamable)
-  primaryKey = EquipmentSaleId . _equipmentSalePid
+  primaryKey = EquipmentSaleId . equipmentsalePid
 deriving instance Show EquipmentSale
 deriving instance Eq EquipmentSale
 deriving instance Show EquipmentSaleId
@@ -205,7 +218,7 @@ instance Beamable PaymentT
 instance Table PaymentT where
   data PrimaryKey PaymentT f = PaymentId (C f Serial)
     deriving (Generic, Beamable)
-  primaryKey = PaymentId . _paymentPid
+  primaryKey = PaymentId . paymentPid
 deriving instance Show Payment
 deriving instance Eq Payment
 deriving instance Show PaymentId
@@ -227,43 +240,73 @@ deriving instance Hashable LocalTime
 
 -- database schema
 data CompanyDb f = CompanyDb
-  { _companySailors        :: f (TableEntity SailorT)
-  , _companyEmployees      :: f (TableEntity EmployeeT)
-  , _companyBoats          :: f (TableEntity BoatT)
-  , _companyReserves       :: f (TableEntity ReservesT)
-  , _companyClockTimes     :: f (TableEntity ClockTimeT)
-  , _companyEquipment      :: f (TableEntity EquipmentT)
-  , _companyEquipmentSales :: f (TableEntity EquipmentSaleT)
-  , _companyPayments       :: f (TableEntity PaymentT)
+  { companySailors        :: f (TableEntity SailorT)
+  , companyEmployees      :: f (TableEntity EmployeeT)
+  , companyBoats          :: f (TableEntity BoatT)
+  , companyReserves       :: f (TableEntity ReservesT)
+  , companyClockTimes     :: f (TableEntity ClockTimeT)
+  , companyIncidents      :: f (TableEntity IncidentT)
+  , companyEquipment      :: f (TableEntity EquipmentT)
+  , companyEquipmentSales :: f (TableEntity EquipmentSaleT)
+  , companyPayments       :: f (TableEntity PaymentT)
   }
   deriving (Generic, Database be)
 
--- fix default naming scheme for primary keys
+-- default naming scheme for primary keys is weird; don't use it
 -- TODO: working here
 companyDb :: DatabaseSettings be CompanyDb
 companyDb = defaultDbSettings `withDbModification` dbModification
-  { _companyReserves = modifyTableFields tableModification
-                         { _reservesBid = BoatId (fieldNamed "bid")
-                         , _reservesSid = SailorId (fieldNamed "sid")
-                         }
+  { companyReserves       = modifyTableFields tableModification
+                              { reservesBid = BoatId "bid"
+                              , reservesSid = SailorId "sid"
+                              , reservesEid = EmployeeId "eid"
+                              , reservesPid = PaymentId "pid"
+                              }
+  , companyClockTimes     = modifyTableFields tableModification
+                              { clocktimeEid = EmployeeId "eid"
+                              }
+  , companyIncidents      = modifyTableFields tableModification
+                              { incidentRid = ReservesId "rid"
+                              , incidentEid = EmployeeId "eid"
+                              , incidentPid = PaymentId "pid"
+                              }
+  , companyEquipmentSales = modifyTableFields tableModification
+                              { equipmentsalePid  = PaymentId "pid"
+                              , equipmentsaleEqid = EquipmentId "eqid"
+                              , equipmentsaleSid  = SailorId "sid"
+                              }
+  , companyPayments       = modifyTableFields tableModification
+                              { paymentSid = SailorId "sid"
+                              }
   }
 
--- shorthands for accessing tables
-type CompanyTable t s = Q Postgres CompanyDb s (t (QExpr Postgres s))
-
+-- shorthands for accessing tables and connection
 getTable
-  :: (Database Postgres db, BeamSqlBackend Postgres)
+  :: (Database Postgres CompanyDb, BeamSqlBackend Postgres)
   => (  DatabaseSettings Postgres CompanyDb
-     -> DatabaseEntity Postgres db (TableEntity table)
+     -> DatabaseEntity Postgres CompanyDb (TableEntity table)
      )
-  -> Q Postgres db s (table (QExpr Postgres s))
-getTable tableSelector = all_ $ tableSelector companyDb
+  -> ( DatabaseEntity Postgres CompanyDb (TableEntity table)
+     , Q Postgres CompanyDb s (table (QExpr Postgres s))
+     )
+getTable tableSelector =
+  (tableSelector companyDb, all_ $ tableSelector companyDb)
 
-sailors = getTable _companySailors
-employees = getTable _companyEmployees
-boats = getTable _companyBoats
-reserves = getTable _companyReserves
-clockTimes = getTable _companyClockTimes
-equipment = getTable _companyEquipment
-equipmentSales = getTable _companyEquipmentSales
-payments = getTable _companyPayments
+(sailor, sailors) = getTable companySailors
+(employee, employees) = getTable companyEmployees
+(boat, boats) = getTable companyBoats
+(reserve, reserves) = getTable companyReserves
+(clockTime, clockTimes) = getTable companyClockTimes
+(equipmen, equipment) = getTable companyEquipment
+(equipmentSale, equipmentSales) = getTable companyEquipmentSales
+(payment, payments) = getTable companyPayments
+
+-- database connection object
+conn = getDbConn "ece464_pset1_part3"
+
+-- helper to run queries
+run = runQuery conn
+
+-- set up and destroy the tables in the database
+setupSchema = runSqlFile conn "res/pset1_part3_setup.sql"
+cleanupSchema = runSqlFile conn "res/pset1_part3_cleanup.sql"

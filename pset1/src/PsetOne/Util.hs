@@ -7,9 +7,17 @@ import           Database.Beam.Backend.SQL
 import           Database.Beam.Postgres
 import           Database.PostgreSQL.Simple
 
-import           Data.ByteString
-import           Data.ByteString.UTF8
+-- import           Data.ByteString
+import           Database.PostgreSQL.Simple.Types
+
+import           Data.ByteString.UTF8           ( fromString )
 import           Data.Time
+
+-- helper for running a SQL file
+runSqlFile conn file = do
+  text <- readFile file
+  conn <- conn
+  execute_ conn (Query (fromString text))
 
 -- helper for getting database connection
 getDbConn :: String -> IO Connection
@@ -20,7 +28,7 @@ getDbConn dbName = connect defaultConnectInfo { connectUser     = "ece464"
 -- helper for running queries with debug printing
 runQuery :: IO Connection -> Pg b -> IO b
 runQuery conn query =
-  conn >>= \conn -> runBeamPostgresDebug Prelude.putStrLn conn query
+  conn >>= \conn -> runBeamPostgresDebug putStrLn conn query
 
 -- abstracted syntax for joins; easier to use than Beam's `join_`
 join
