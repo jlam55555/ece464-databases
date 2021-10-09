@@ -90,17 +90,18 @@ insertClockTimes entries =
 -- clockOut employee (yyyy, mM, dd) (hh, mm, ss) = insertClockTimes
 --   [(employee, LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss), False)]
 
-insertPayments
-  :: (forall s . [(SailorT (QExpr Postgres s), Int32, LocalTime, Int32, Bool)])
-  -> IO [Payment]
+-- insertPayments
+--   :: (forall s . [(SailorT (QExpr Postgres s), Int32, LocalTime, Int32, Bool)])
+--   -> IO [Payment]
 insertPayments entries =
   run $ runInsertReturningList $ insert paymentsTable $ insertExpressions $ map
-    (\(sailor, cost, time, paymentType, paid) -> Payment default_
-                                                         (pk sailor)
-                                                         (val_ cost)
-                                                         (val_ time)
-                                                         (val_ paymentType)
-                                                         (val_ paid)
+    (\(sailor, cost, time, paymentType, paid) -> Payment
+      default_
+      (pk (rescopeSailor sailor))
+      (val_ cost)
+      (val_ time)
+      (val_ paymentType)
+      (val_ paid)
     )
     entries
 
@@ -164,7 +165,7 @@ createFixture = do
   insertClockTimes
     [(marsha, LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0), True)]
   insertPayments
-    [ ( sailorReinterpret hershel
+    [ ( hershel
       , 32
       , LocalTime (fromGregorian 2000 1 1) (TimeOfDay 9 0 0)
       , 32
@@ -175,6 +176,5 @@ createFixture = do
   -- putStrLn (show (pk marsha))
   pure newSailors
 
--- need this to allow use of sailors due to type differences
-sailorReinterpret Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
+rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
   = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
