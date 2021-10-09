@@ -6,18 +6,17 @@ import           Database.Beam
 import           Database.Beam.Backend.SQL
 import           Database.Beam.Postgres
 import           Database.PostgreSQL.Simple
-
--- import           Data.ByteString
 import           Database.PostgreSQL.Simple.Types
 
 import           Data.ByteString.UTF8           ( fromString )
-import           Data.Time
+import           Data.Int                       ( Int64 )
 
 -- helper for running a SQL file
+runSqlFile :: IO Connection -> FilePath -> IO Int64
 runSqlFile conn file = do
   text <- readFile file
   conn <- conn
-  execute_ conn (Query (fromString text))
+  execute_ conn $ Query $ fromString text
 
 -- helper for getting database connection
 getDbConn :: String -> IO Connection
