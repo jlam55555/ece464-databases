@@ -342,3 +342,17 @@ resetSchema = do
   case (result :: Either SqlError Int64) of
     Right _   -> setupSchema
     Left  err -> setupSchema
+
+-- helper functions to convert to rescope query variables
+rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
+  = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
+rescopeEmployee Employee { employeeEid = eid, employeeEname = ename, employeeDob = dob, employeeWage = wage }
+  = Employee (val_ eid) (val_ ename) (val_ dob) (val_ wage)
+rescopeBoat Boat { boatBid = bid, boatBname = bname, boatColor = color, boatLength = length }
+  = Boat (val_ bid) (val_ bname) (val_ color) (val_ length)
+rescopePayment Payment { paymentPid = pid, paymentSid = sid, paymentCost = cost, paymentTime = time, paymentType = paymentType }
+  = Payment (val_ pid) (val_ sid) (val_ cost) (val_ time) (val_ paymentType)
+rescopeEquipment Equipment { equipmentEqid = eqid, equipmentName = name, equipmentDsc = dsc, equipmentCount = count, equipmentCost = cost }
+  = Equipment (val_ eqid) (val_ name) (val_ dsc) (val_ count) (val_ cost)
+rescopeReserves Reserves { reservesRid = rid, reservesSid = sid, reservesBid = bid, reservesEid = eid, reservesPid = pid, reservesDay = day }
+  = Reserves (val_ rid) (val_ sid) (val_ bid) (val_ eid) (val_ pid) (val_ day)

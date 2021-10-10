@@ -10,6 +10,17 @@ import           Database.PostgreSQL.Simple.Types
 
 import           Data.ByteString.UTF8           ( fromString )
 import           Data.Int                       ( Int64 )
+import           Data.Time
+
+-- helper to print out each item on new line;
+-- query is some query that returns an (IO item) type
+showLines :: (Show a) => IO [a] -> IO ()
+showLines = flip (>>=) (\list -> mapM_ (putStrLn . show) list)
+
+-- helper functions for time literals
+makeDay = fromGregorian
+makeTime yyyy mM dd hh mm ss =
+  LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss)
 
 -- helper for running a SQL file
 runSqlFile :: IO Connection -> FilePath -> IO Int64
