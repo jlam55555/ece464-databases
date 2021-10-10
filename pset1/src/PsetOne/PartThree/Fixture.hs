@@ -102,11 +102,12 @@ insertPayments = makeInserter
   )
 
 -- reservation includes information about the reservation and payment
-insertReservations
-  :: [(Sailor, Boat, Employee, LocalTime, Int32)] -> IO [Reserves]
 insertReservations entries = do
   payments <- insertPayments
-    (map (\(sailor, _, _, time, cost) -> (sailor, cost, time, 0)) entries)
+    (map
+      (\(sailor, _, _, time, cost) -> (sailor, cost, time, ReservesPayment))
+      entries
+    )
   makeInserter
       reservesTable
       (\((sailor, boat, employee, time, _), payment) -> Reserves
@@ -183,21 +184,24 @@ createFixture = do
       ]
   insertClockTimes
     [ clockIn marsha $ makeTime 2021 10 03 09 00 00
-    , clockOut marsha $ makeTime 2000 10 03 05 01 00
+    , clockOut marsha $ makeTime 2000 10 03 17 01 00
     , clockIn marsha $ makeTime 2000 10 04 08 58 00
-    , clockOut marsha $ makeTime 2000 10 04 05 00 00
+    , clockOut marsha $ makeTime 2000 10 04 17 00 00
     , clockIn marsha $ makeTime 2000 10 05 09 00 00
-    , clockOut marsha $ makeTime 2000 10 05 05 00 00
+    , clockOut marsha $ makeTime 2000 10 05 17 00 00
     , clockIn marsha $ makeTime 2000 10 06 09 00 00
-    , clockOut marsha $ makeTime 2000 10 06 05 00 00
+    , clockOut marsha $ makeTime 2000 10 06 17 00 00
     , clockIn willard $ makeTime 2000 10 03 08 58 00
-    , clockOut willard $ makeTime 2000 10 03 05 00 00
+    , clockOut willard $ makeTime 2000 10 03 17 00 00
     , clockIn willard $ makeTime 2000 10 04 08 58 00
-    , clockOut willard $ makeTime 2000 10 04 05 00 00
+    , clockOut willard $ makeTime 2000 10 04 17 00 00
     , clockIn bryon $ makeTime 2000 10 05 09 00 00
-    , clockOut bryon $ makeTime 2000 10 05 05 00 00
+    , clockOut bryon $ makeTime 2000 10 05 17 00 00
     , clockIn bryon $ makeTime 2000 10 06 09 00 00
-    , clockOut bryon $ makeTime 2000 10 06 05 00 00
+    , clockOut bryon $ makeTime 2000 10 06 17 00 00
     ]
-  -- insertPayments [(hershel, 32, makeTime 2000 1 1 9 0 0, 32)]
+  insertReservations
+    [ (hershel, andiamo   , marsha, makeTime 2020 10 03 12 01 52, 50)
+    , (hershel, coolChange, marsha, makeTime 2020 10 04 12 01 52, 50)
+    ]
   pure newSailors

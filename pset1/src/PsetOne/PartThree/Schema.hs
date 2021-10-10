@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -15,6 +16,7 @@ module PsetOne.PartThree.Schema where
 import           PsetOne.Util
 
 import           Database.Beam
+import           Database.Beam.Backend
 import           Database.Beam.Backend.SQL
 import           Database.Beam.Backend.SQL.Types
 import           Database.Beam.Postgres
@@ -96,7 +98,7 @@ data PaymentT f = Payment
   , paymentSid  :: PrimaryKey SailorT f
   , paymentCost :: C f Int32
   , paymentTime :: C f LocalTime
-  , paymentType :: C f Int32
+  , paymentType :: C f PaymentType
   }
   deriving Generic
 
@@ -107,6 +109,27 @@ data EquipmentSaleT f = EquipmentSale
   , equipmentsaleCount :: C f Int32
   }
   deriving Generic
+
+-- custom types: payment type
+data PaymentType = ReservesPayment
+                 | EquipmentPayment
+                 | IncidentPayment
+  deriving (Show, Read, Eq, Ord, Enum, Generic, Hashable)
+
+instance HasSqlValueSyntax be Integer => HasSqlValueSyntax be PaymentType where
+  sqlValueSyntax x = case x of
+    ReservesPayment  -> sqlValueSyntax 0
+    EquipmentPayment -> sqlValueSyntax 1
+    IncidentPayment  -> sqlValueSyntax 2
+
+instance (BeamBackend be, FromBackendRow be Integer) => FromBackendRow be PaymentType where
+  fromBackendRow = do
+    val <- fromBackendRow
+    case val :: Integer of
+      0 -> pure ReservesPayment
+      1 -> pure EquipmentPayment
+      2 -> pure IncidentPayment
+      _ -> fail ("Invalid value for PaymentType: " ++ show val)
 
 -- type aliases, primary keys, and table instances
 type Sailor = SailorT Identity
