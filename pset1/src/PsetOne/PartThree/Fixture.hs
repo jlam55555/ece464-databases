@@ -19,10 +19,14 @@ import           Database.Beam.Backend.Types
 
 import           Data.Fixed
 import           Data.Int
+import           Data.Maybe                     ( isJust )
 import           Data.Text                      ( Text )
 import           Data.Time
 
 -- TODO: move a lot of this to schema file
+-- TODO: generate some test queries to show functionality
+-- TODO: write-up about everything
+-- TODO: add more test cases
 
 -- helper to print out each item on new line;
 -- query is some query that returns an (IO item) type
@@ -133,35 +137,54 @@ insertReservations entries = do
       )
     $ zip entries payments
 
+-- matches up holes in original maybe with the second array; example:
+--     matchHoles [-2.4, 3.5, 52.0] [Just 4, Nothing, Nothing, Just 3, Just 2, Nothing]
+--     -> [Just (-2.4),Nothing,Nothing,Just 3.5,Just 52.0,Nothing]
+-- This is used for optional costs in the incidents table
+matchHoles :: [b] -> [Maybe a] -> [Maybe b]
+matchHoles noHoles holey = reverse $ snd $ foldl
+  (\(noHoles, newHoley) x -> case x of
+    Just _  -> (tail noHoles, Just (head noHoles) : newHoley)
+    Nothing -> (noHoles, Nothing : newHoley)
+  )
+  (noHoles, [])
+  holey
+
 -- incidents are associated with a reservation
--- incidents may optionally create a payment with it
+-- incidents may optionally create a payment with it; most of the complexity
+-- in this function comes from dealing with the optional value
 -- [(reservation, time, severity, description, employee, resolved, resolution, cost)]
--- TODO: have insertPayments accept an array of `Payment`s
 insertIncidents
-  :: [(Reserves, LocalTime, Int32, Text, Employee, Bool, Text, Int32)]
+  :: [(Reserves, LocalTime, Int32, Text, Employee, Bool, Text, Maybe Int32)]
   -> IO [Incident]
 insertIncidents entries = do
   payments <- insertPayments
-    (map
-      (\(reservation, time, _, _, _, _, _, cost) ->
-        (Right $ reservesSid reservation, cost, time, IncidentPayment)
-      )
-      entries
+    ( map
+        (\(reservation, time, _, _, _, _, _, Just cost) ->
+          (Right $ reservesSid reservation, cost, time, IncidentPayment)
+        )
+    $ filter (\(_, _, _, _, _, _, _, cost) -> isJust cost) entries
     )
   makeInserter
       incidentsTable
       (\((reservation, time, severity, description, employee, resolved, resolution, _), payment) ->
-        Incident default_
-                 (pk $ rescopeReserves reservation)
-                 (val_ time)
-                 (val_ severity)
-                 (val_ description)
-                 (val_ resolved)
-                 (pk $ rescopeEmployee employee)
-                 (val_ resolution)
-                 (pk $ rescopePayment payment)
+        Incident
+          default_
+          (pk $ rescopeReserves reservation)
+          (val_ time)
+          (val_ severity)
+          (val_ description)
+          (val_ resolved)
+          (pk $ rescopeEmployee employee)
+          (val_ resolution)
+          (case payment of
+            Just payment -> just_ (pk $ rescopePayment payment)
+            Nothing      -> nothing_
+          )
       )
-    $ zip entries payments
+    $ zip entries
+    $ matchHoles payments
+    $ map (\(_, _, _, _, _, _, _, cost) -> cost) entries
 
 -- equipment sale includes information about the equipment, sailor, and payment
 insertEquipmentSales entries = do
@@ -181,9 +204,6 @@ insertEquipmentSales entries = do
         (val_ count)
       )
     $ zip entries payments
-
--- TODO: generate some test queries to show functionality
--- TODO: write-up about everything
 
 createFixture = do
   resetSchema
@@ -258,12 +278,10 @@ createFixture = do
   [rsv1, rsv2] <- insertReservations
     [ (hershel, andiamo   , marsha, makeTime 2020 10 03 12 01 52, 50)
     , (hershel, coolChange, marsha, makeTime 2020 10 04 12 01 52, 50)
-    -- TODO: add more reservations
     ]
   insertEquipmentSales
     [ (hershel, marineRotationPlate, 1, makeTime 2020 10 03 11 50 00)
     , (hershel, boatHookEnd        , 3, makeTime 2020 10 03 11 50 00)
-    -- TODO: add more equipment sales
     ]
   insertIncidents
     [ ( rsv1
@@ -273,7 +291,7 @@ createFixture = do
       , marsha
       , False
       , "fixed hull"
-      , 10000
+      , Nothing
       )
     , ( rsv1
       , makeTime 2020 10 03 14 44 02
@@ -282,7 +300,7 @@ createFixture = do
       , marsha
       , False
       , "bought new boat"
-      , 1250000
+      , Just 1250000
       )
     ]
   pure ()

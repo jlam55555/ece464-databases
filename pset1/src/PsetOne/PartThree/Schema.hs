@@ -26,7 +26,7 @@ import           Control.Exception
 
 import           Data.Hashable
 import           Data.Int
-import           Data.Text
+import           Data.Text                      ( Text )
 import           Data.Time
 
 -- table schemas
@@ -80,7 +80,7 @@ data IncidentT f = Incident
   , incidentResolved   :: C f Bool
   , incidentEid        :: PrimaryKey EmployeeT f
   , incidentResolution :: C f Text
-  , incidentPid        :: PrimaryKey PaymentT f
+  , incidentPid        :: PrimaryKey PaymentT (Nullable f)
   }
   deriving Generic
 
@@ -238,6 +238,7 @@ deriving instance Hashable EquipmentSaleId
 
 type Payment = PaymentT Identity
 type PaymentId = PrimaryKey PaymentT Identity
+type PaymentIdNullable = PrimaryKey PaymentT (Nullable Identity)
 instance Beamable PaymentT
 instance Table PaymentT where
   data PrimaryKey PaymentT f = PaymentId (C f Int32)
@@ -248,6 +249,8 @@ deriving instance Eq Payment
 deriving instance Show PaymentId
 deriving instance Eq PaymentId
 deriving instance Hashable PaymentId
+deriving instance Show PaymentIdNullable
+deriving instance Eq PaymentIdNullable
 
 -- allowing times to be hashable
 deriving instance Generic TimeOfDay
