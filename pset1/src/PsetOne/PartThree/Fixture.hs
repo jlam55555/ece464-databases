@@ -73,22 +73,14 @@ insertClockTimes =
         (val_ timestamp)
         (val_ clockType)
       )
-
--- clockIn, clockOut
---   :: (forall s . EmployeeT (QExpr Postgres s))
---   -> (Integer, Int, Int)
---   -> (Int, Int, Pico)
---   -> IO [ClockTime]
--- clockIn employee (yyyy, mM, dd) (hh, mm, ss) = insertClockTimes
---   [(employee, LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss), True)]
--- clockOut employee (yyyy, mM, dd) (hh, mm, ss) = insertClockTimes
---   [(employee, LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss), False)]
+clockIn employee time = (employee, time, True)
+clockOut employee time = (employee, time, False)
 
 insertPayments =
   makeInserter paymentsTable
     $ (\(sailor, cost, time, paymentType, paid) -> Payment
         default_
-        (pk (rescopeSailor sailor))
+        (pk $ rescopeSailor sailor)
         (val_ cost)
         (val_ time)
         (val_ paymentType)
@@ -96,9 +88,17 @@ insertPayments =
       )
 
 -- TODO: reservations
+-- reservation should also create a payment with it
+
 -- TODO: incidents
--- TODO: payments
+-- incidents are associated with a reservation
+-- incident may optionally create a payment with it
+
 -- TODO: equipment sales
+-- equipment sale should also create a payment with it
+
+-- TODO: generate some test queries to show functionality
+-- TODO: write-up about everything
 
 createFixture = do
   resetSchema
@@ -152,7 +152,24 @@ createFixture = do
         , 743
         )
       ]
-  insertClockTimes [(marsha, makeTime 2000 1 1 9 0 0, True)]
+  insertClockTimes
+    [ clockIn marsha $ makeTime 2021 10 03 09 00 00
+    , clockOut marsha $ makeTime 2000 10 03 05 01 00
+    , clockIn marsha $ makeTime 2000 10 04 08 58 00
+    , clockOut marsha $ makeTime 2000 10 04 05 00 00
+    , clockIn marsha $ makeTime 2000 10 05 09 00 00
+    , clockOut marsha $ makeTime 2000 10 05 05 00 00
+    , clockIn marsha $ makeTime 2000 10 06 09 00 00
+    , clockOut marsha $ makeTime 2000 10 06 05 00 00
+    , clockIn willard $ makeTime 2000 10 03 08 58 00
+    , clockOut willard $ makeTime 2000 10 03 05 00 00
+    , clockIn willard $ makeTime 2000 10 04 08 58 00
+    , clockOut willard $ makeTime 2000 10 04 05 00 00
+    , clockIn bryon $ makeTime 2000 10 05 09 00 00
+    , clockOut bryon $ makeTime 2000 10 05 05 00 00
+    , clockIn bryon $ makeTime 2000 10 06 09 00 00
+    , clockOut bryon $ makeTime 2000 10 06 05 00 00
+    ]
   insertPayments [(hershel, 32, makeTime 2000 1 1 9 0 0, 32, True)]
   pure newSailors
 
@@ -161,7 +178,7 @@ makeDay = fromGregorian
 makeTime yyyy mM dd hh mm ss =
   LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss)
 
--- helper function to convert to rescope sailor literal
+-- helper functions to convert to rescope query variables
 rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
   = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
 rescopeEmployee Employee { employeeEid = eid, employeeEname = ename, employeeDob = dob, employeeWage = wage }
