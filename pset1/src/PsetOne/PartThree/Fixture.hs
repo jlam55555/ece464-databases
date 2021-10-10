@@ -45,50 +45,79 @@ makeInserter table entryConverter entries =
     entryConverter
     entries
 
+-- helper functions for time literals
+makeDay = fromGregorian
+makeTime yyyy mM dd hh mm ss =
+  LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss)
+
+-- helper functions to convert to rescope query variables
+rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
+  = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
+rescopeEmployee Employee { employeeEid = eid, employeeEname = ename, employeeDob = dob, employeeWage = wage }
+  = Employee (val_ eid) (val_ ename) (val_ dob) (val_ wage)
+rescopeBoat Boat { boatBid = bid, boatBname = bname, boatColor = color, boatLength = length }
+  = Boat (val_ bid) (val_ bname) (val_ color) (val_ length)
+rescopePayment Payment { paymentPid = pid, paymentSid = sid, paymentCost = cost, paymentTime = time, paymentType = paymentType }
+  = Payment (val_ pid) (val_ sid) (val_ cost) (val_ time) (val_ paymentType)
+
+-- functions to perform insert instructions
 insertSailors = makeInserter sailorsTable $ \(name, rating, (yyyy, mm, dd)) ->
   Sailor default_ (val_ name) (val_ rating) (val_ $ makeDay yyyy mm dd)
 
-insertEmployees =
-  makeInserter employeesTable
-    $ (\(name, (yyyy, mm, dd), wage) ->
-        Employee default_ (val_ name) (val_ $ makeDay yyyy mm dd) (val_ wage)
-      )
+insertEmployees = makeInserter
+  employeesTable
+  (\(name, (yyyy, mm, dd), wage) ->
+    Employee default_ (val_ name) (val_ $ makeDay yyyy mm dd) (val_ wage)
+  )
 
-insertBoats =
-  makeInserter boatsTable
-    $ (\(name, color, length) ->
-        Boat default_ (val_ name) (val_ color) (val_ length)
-      )
+insertBoats = makeInserter
+  boatsTable
+  (\(name, color, length) ->
+    Boat default_ (val_ name) (val_ color) (val_ length)
+  )
 
-insertEquipment =
-  makeInserter equipmentTable
-    $ (\(name, dsc, count, cost) ->
-        Equipment default_ (val_ name) (val_ dsc) (val_ count) (val_ cost)
-      )
+insertEquipment = makeInserter
+  equipmentTable
+  (\(name, dsc, count, cost) ->
+    Equipment default_ (val_ name) (val_ dsc) (val_ count) (val_ cost)
+  )
 
-insertClockTimes =
-  makeInserter clockTimesTable
-    $ (\(employee, timestamp, clockType) -> ClockTime
-        (pk $ rescopeEmployee employee)
-        (val_ timestamp)
-        (val_ clockType)
-      )
+insertClockTimes = makeInserter
+  clockTimesTable
+  (\(employee, timestamp, clockType) -> ClockTime
+    (pk $ rescopeEmployee employee)
+    (val_ timestamp)
+    (val_ clockType)
+  )
 clockIn employee time = (employee, time, True)
 clockOut employee time = (employee, time, False)
 
-insertPayments =
-  makeInserter paymentsTable
-    $ (\(sailor, cost, time, paymentType, paid) -> Payment
+insertPayments = makeInserter
+  paymentsTable
+  (\(sailor, cost, time, paymentType) -> Payment default_
+                                                 (pk $ rescopeSailor sailor)
+                                                 (val_ cost)
+                                                 (val_ time)
+                                                 (val_ paymentType)
+  )
+
+-- reservation includes information about the reservation and payment
+insertReservations
+  :: [(Sailor, Boat, Employee, LocalTime, Int32)] -> IO [Reserves]
+insertReservations entries = do
+  payments <- insertPayments
+    (map (\(sailor, _, _, time, cost) -> (sailor, cost, time, 0)) entries)
+  makeInserter
+      reservesTable
+      (\((sailor, boat, employee, time, _), payment) -> Reserves
         default_
         (pk $ rescopeSailor sailor)
-        (val_ cost)
-        (val_ time)
-        (val_ paymentType)
-        (val_ paid)
+        (pk $ rescopeBoat boat)
+        (pk $ rescopeEmployee employee)
+        (pk $ rescopePayment payment)
+        (val_ $ localDay time)
       )
-
--- TODO: reservations
--- reservation should also create a payment with it
+    $ zip entries payments
 
 -- TODO: incidents
 -- incidents are associated with a reservation
@@ -170,16 +199,5 @@ createFixture = do
     , clockIn bryon $ makeTime 2000 10 06 09 00 00
     , clockOut bryon $ makeTime 2000 10 06 05 00 00
     ]
-  insertPayments [(hershel, 32, makeTime 2000 1 1 9 0 0, 32, True)]
+  -- insertPayments [(hershel, 32, makeTime 2000 1 1 9 0 0, 32)]
   pure newSailors
-
--- helper functions for time literals
-makeDay = fromGregorian
-makeTime yyyy mM dd hh mm ss =
-  LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss)
-
--- helper functions to convert to rescope query variables
-rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
-  = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
-rescopeEmployee Employee { employeeEid = eid, employeeEname = ename, employeeDob = dob, employeeWage = wage }
-  = Employee (val_ eid) (val_ ename) (val_ dob) (val_ wage)
