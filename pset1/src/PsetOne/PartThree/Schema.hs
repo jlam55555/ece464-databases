@@ -97,7 +97,6 @@ data PaymentT f = Payment
   , paymentCost :: C f Int32
   , paymentTime :: C f LocalTime
   , paymentType :: C f Int32
-  , paymentPaid :: C f Bool
   }
   deriving Generic
 

@@ -28,22 +28,6 @@ CREATE TABLE boats (
        length INT NOT NULL
 );
 
--- changed primary key to rid
--- added eid field
--- added foreign key constaints
-CREATE TABLE reserves (
-       rid SERIAL PRIMARY KEY,
-       sid INT NOT NULL,        -- sailor
-       bid INT NOT NULL,        -- boat
-       eid INT NOT NULL,        -- attending employee
-       pid INT NOT NULL,        -- payment information
-       day DATE NOT NULL,       -- date of boat reservation
-       FOREIGN KEY (sid) REFERENCES sailors,
-       FOREIGN KEY (bid) REFERENCES boats,
-       FOREIGN KEY (eid) REFERENCES employees,
-       UNIQUE (sid, bid, day)
-);
-
 -- new table: keep track of employee hours
 CREATE TABLE clock_times (
        eid INT,
@@ -51,26 +35,6 @@ CREATE TABLE clock_times (
        type BOOLEAN NOT NULL,   -- true = clock in, false = clock out
        FOREIGN KEY (eid) REFERENCES employees,
        PRIMARY KEY (eid, time)
-);
-
--- new table
-CREATE TABLE incidents (
-       iid SERIAL PRIMARY KEY,
-
-       -- incident description
-       rid INT NOT NULL,
-       time TIMESTAMP NOT NULL, -- time of incident
-       sev INT NOT NULL,        -- severity level: 1-10, 10 is most severe
-       dsc TEXT NOT NULL,       -- description
-       resolved BOOLEAN NOT NULL,  -- whether incident has been resolved
-
-       -- incident resolution
-       eid INT,                 -- attending employee
-       resolution TEXT,         -- description of resolution
-       pid INT,                 -- costs associated with incident (if any)
-       
-       FOREIGN KEY (rid) REFERENCES reserves,
-       FOREIGN KEY (eid) REFERENCES employees
 );
 
 -- new table
@@ -91,8 +55,7 @@ CREATE TABLE payments (
        sid INT NOT NULL,
        cost INT NOT NULL,       -- in cents
        time TIMESTAMP NOT NULL, -- timestamp of transaction
-       type INT NOT NULL,       -- 0=reservation, 1=equipment sale, 2=incident
-       paid BOOLEAN NOT NULL    -- if cc transaction, may not post immediately
+       type INT NOT NULL        -- 0=reservation, 1=equipment sale, 2=incident
 );
 
 -- new table
@@ -105,4 +68,42 @@ CREATE TABLE equipment_sales (
        FOREIGN KEY (pid) REFERENCES payments,
        FOREIGN KEY (eqid) REFERENCES equipment,
        FOREIGN KEY (sid) REFERENCES sailors
+);
+
+-- changed primary key to rid
+-- added eid field
+-- added foreign key constaints
+CREATE TABLE reserves (
+       rid SERIAL PRIMARY KEY,
+       sid INT NOT NULL,        -- sailor
+       bid INT NOT NULL,        -- boat
+       eid INT NOT NULL,        -- attending employee
+       pid INT NOT NULL,        -- payment information
+       day DATE NOT NULL,       -- date of boat reservation
+       FOREIGN KEY (sid) REFERENCES sailors,
+       FOREIGN KEY (bid) REFERENCES boats,
+       FOREIGN KEY (eid) REFERENCES employees,
+       FOREIGN KEY (pid) REFERENCES payments,
+       UNIQUE (sid, bid, day)
+);
+
+-- new table
+CREATE TABLE incidents (
+       iid SERIAL PRIMARY KEY,
+
+       -- incident description
+       rid INT NOT NULL,
+       time TIMESTAMP NOT NULL, -- time of incident
+       sev INT NOT NULL,        -- severity level: 1-10, 10 is most severe
+       dsc TEXT NOT NULL,       -- description
+       resolved BOOLEAN NOT NULL,  -- whether incident has been resolved
+
+       -- incident resolution
+       eid INT,                 -- attending employee
+       resolution TEXT,         -- description of resolution
+       pid INT,                 -- costs associated with incident (if any)
+
+       FOREIGN KEY (pid) REFERENCES payments,
+       FOREIGN KEY (rid) REFERENCES reserves,
+       FOREIGN KEY (eid) REFERENCES employees
 );
