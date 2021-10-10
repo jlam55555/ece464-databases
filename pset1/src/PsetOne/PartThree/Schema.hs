@@ -85,7 +85,7 @@ data IncidentT f = Incident
   deriving Generic
 
 data EquipmentT f = Equipment
-  { equipmentEid   :: C f Int32
+  { equipmentEqid  :: C f Int32
   , equipmentName  :: C f Text
   , equipmentDsc   :: C f Text
   , equipmentCount :: C f Int32
@@ -216,7 +216,7 @@ instance Beamable EquipmentT
 instance Table EquipmentT where
   data PrimaryKey EquipmentT f = EquipmentId (C f Int32)
     deriving (Generic, Beamable)
-  primaryKey = EquipmentId . equipmentEid
+  primaryKey = EquipmentId . equipmentEqid
 deriving instance Show Equipment
 deriving instance Eq Equipment
 deriving instance Show EquipmentId

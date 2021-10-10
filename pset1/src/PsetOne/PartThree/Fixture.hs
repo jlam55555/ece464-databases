@@ -59,6 +59,8 @@ rescopeBoat Boat { boatBid = bid, boatBname = bname, boatColor = color, boatLeng
   = Boat (val_ bid) (val_ bname) (val_ color) (val_ length)
 rescopePayment Payment { paymentPid = pid, paymentSid = sid, paymentCost = cost, paymentTime = time, paymentType = paymentType }
   = Payment (val_ pid) (val_ sid) (val_ cost) (val_ time) (val_ paymentType)
+rescopeEquipment Equipment { equipmentEqid = eqid, equipmentName = name, equipmentDsc = dsc, equipmentCount = count, equipmentCost = cost }
+  = Equipment (val_ eqid) (val_ name) (val_ dsc) (val_ count) (val_ cost)
 
 -- functions to perform insert instructions
 insertSailors = makeInserter sailorsTable $ \(name, rating, (yyyy, mm, dd)) ->
@@ -124,8 +126,30 @@ insertReservations entries = do
 -- incidents are associated with a reservation
 -- incident may optionally create a payment with it
 
--- TODO: equipment sales
--- equipment sale should also create a payment with it
+-- equipment sale includes information about the equipment, sailor, and payment
+
+-- sailor, equipment, count
+-- pid, eqid, sid, count
+
+insertEquipmentSales
+  :: [(Sailor, Equipment, Int32, LocalTime)] -> IO [EquipmentSale]
+insertEquipmentSales entries = do
+  payments <- insertPayments
+    (map
+      (\(sailor, equipment, count, time) ->
+        (sailor, (equipmentCost equipment) * count, time, EquipmentPayment)
+      )
+      entries
+    )
+  makeInserter
+      equipmentSalesTable
+      (\((sailor, equipment, count, _), payment) -> EquipmentSale
+        (pk $ rescopePayment payment)
+        (pk $ rescopeEquipment equipment)
+        (pk $ rescopeSailor sailor)
+        (val_ count)
+      )
+    $ zip entries payments
 
 -- TODO: generate some test queries to show functionality
 -- TODO: write-up about everything
@@ -203,5 +227,11 @@ createFixture = do
   insertReservations
     [ (hershel, andiamo   , marsha, makeTime 2020 10 03 12 01 52, 50)
     , (hershel, coolChange, marsha, makeTime 2020 10 04 12 01 52, 50)
+    -- TODO: add more reservations
     ]
-  pure newSailors
+  insertEquipmentSales
+    [ (hershel, marineRotationPlate, 1, makeTime 2020 10 03 11 50 00)
+    , (hershel, boatHookEnd        , 3, makeTime 2020 10 03 11 50 00)
+    -- TODO: add more equipment sales
+    ]
+  pure ()

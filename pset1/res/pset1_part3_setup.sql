@@ -39,7 +39,7 @@ CREATE TABLE clock_times (
 
 -- new table
 CREATE TABLE equipment (
-       eid SERIAL PRIMARY KEY,
+       eqid SERIAL PRIMARY KEY,
        name VARCHAR(30) NOT NULL,       -- short title
        dsc TEXT,                -- long description
        count INT NOT NULL,      -- quantity
