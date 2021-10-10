@@ -66,16 +66,13 @@ insertEquipment =
         Equipment default_ (val_ name) (val_ dsc) (val_ count) (val_ cost)
       )
 
--- TODO: factor this with `makeInserter` if possible
--- insertClockTimes
---   :: (forall s . [(EmployeeT (QExpr Postgres s), LocalTime, Bool)])
---   -> IO [ClockTime]
-insertClockTimes entries =
-  run $ runInsertReturningList $ insert clockTimesTable $ insertValues $ map
-    (\(employee, timestamp, clockType) ->
-      ClockTime (pk employee) timestamp clockType
-    )
-    entries
+insertClockTimes =
+  makeInserter clockTimesTable
+    $ (\(employee, timestamp, clockType) -> ClockTime
+        (pk $ rescopeEmployee employee)
+        (val_ timestamp)
+        (val_ clockType)
+      )
 
 -- clockIn, clockOut
 --   :: (forall s . EmployeeT (QExpr Postgres s))
@@ -87,20 +84,16 @@ insertClockTimes entries =
 -- clockOut employee (yyyy, mM, dd) (hh, mm, ss) = insertClockTimes
 --   [(employee, LocalTime (fromGregorian yyyy mM dd) (TimeOfDay hh mm ss), False)]
 
--- insertPayments
---   :: (forall s . [(SailorT (QExpr Postgres s), Int32, LocalTime, Int32, Bool)])
---   -> IO [Payment]
-insertPayments entries =
-  run $ runInsertReturningList $ insert paymentsTable $ insertExpressions $ map
-    (\(sailor, cost, time, paymentType, paid) -> Payment
-      default_
-      (pk (rescopeSailor sailor))
-      (val_ cost)
-      (val_ time)
-      (val_ paymentType)
-      (val_ paid)
-    )
-    entries
+insertPayments =
+  makeInserter paymentsTable
+    $ (\(sailor, cost, time, paymentType, paid) -> Payment
+        default_
+        (pk (rescopeSailor sailor))
+        (val_ cost)
+        (val_ time)
+        (val_ paymentType)
+        (val_ paid)
+      )
 
 -- TODO: reservations
 -- TODO: incidents
@@ -171,3 +164,5 @@ makeTime yyyy mM dd hh mm ss =
 -- helper function to convert to rescope sailor literal
 rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }
   = Sailor (val_ sid) (val_ sname) (val_ rating) (val_ dob)
+rescopeEmployee Employee { employeeEid = eid, employeeEname = ename, employeeDob = dob, employeeWage = wage }
+  = Employee (val_ eid) (val_ ename) (val_ dob) (val_ wage)
