@@ -22,6 +22,8 @@ import           Data.Int
 import           Data.Text                      ( Text )
 import           Data.Time
 
+-- TODO: move a lot of this to schema file
+
 -- helper to print out each item on new line;
 -- query is some query that returns an (IO item) type
 showLines :: (Show a) => IO [a] -> IO ()
@@ -61,6 +63,8 @@ rescopePayment Payment { paymentPid = pid, paymentSid = sid, paymentCost = cost,
   = Payment (val_ pid) (val_ sid) (val_ cost) (val_ time) (val_ paymentType)
 rescopeEquipment Equipment { equipmentEqid = eqid, equipmentName = name, equipmentDsc = dsc, equipmentCount = count, equipmentCost = cost }
   = Equipment (val_ eqid) (val_ name) (val_ dsc) (val_ count) (val_ cost)
+rescopeReserves Reserves { reservesRid = rid, reservesSid = sid, reservesBid = bid, reservesEid = eid, reservesPid = pid, reservesDay = day }
+  = Reserves (val_ rid) (val_ sid) (val_ bid) (val_ eid) (val_ pid) (val_ day)
 
 -- functions to perform insert instructions
 insertSailors = makeInserter sailorsTable $ \(name, rating, (yyyy, mm, dd)) ->
@@ -122,17 +126,38 @@ insertReservations entries = do
       )
     $ zip entries payments
 
--- TODO: incidents
 -- incidents are associated with a reservation
--- incident may optionally create a payment with it
+-- incidents may optionally create a payment with it
+-- [(reservation, time, severity, description, employee, resolved, resolution, cost)]
+-- TODO: have insertPayments accept an array of `Payment`s
+insertIncidents
+  :: [(Reserves, LocalTime, Int32, Text, Employee, Bool, Text, Int32)]
+  -> IO [Incident]
+insertIncidents entries = do
+  payments <- insertPayments
+    (map
+      (\(reservation, time, _, _, _, _, _, cost) ->
+        (-- reservesSid reservation
+         Sailor 23 "hi" 32 $ makeDay 2020 01 01, cost, time, IncidentPayment)
+      )
+      entries
+    )
+  makeInserter
+      incidentsTable
+      (\((reservation, time, severity, description, employee, resolved, resolution, _), payment) ->
+        Incident default_
+                 (pk $ rescopeReserves reservation)
+                 (val_ time)
+                 (val_ severity)
+                 (val_ description)
+                 (val_ resolved)
+                 (pk $ rescopeEmployee employee)
+                 (val_ resolution)
+                 (pk $ rescopePayment payment)
+      )
+    $ zip entries payments
 
 -- equipment sale includes information about the equipment, sailor, and payment
-
--- sailor, equipment, count
--- pid, eqid, sid, count
-
-insertEquipmentSales
-  :: [(Sailor, Equipment, Int32, LocalTime)] -> IO [EquipmentSale]
 insertEquipmentSales entries = do
   payments <- insertPayments
     (map
@@ -158,7 +183,7 @@ createFixture = do
   resetSchema
   -- names generated from http://listofrandomnames.com
   -- numbers generated from https://www.random.org/integers
-  newSailors@[hershel, joenn, vania, katheryn, shanika, madeleine, li, zachariah, marinda, clara] <-
+  [hershel, joenn, vania, katheryn, shanika, madeleine, li, zachariah, marinda, clara] <-
     insertSailors
       [ ("Hershel"  , 7 , (1993, 3, 23))
       , ("Joeann"   , 1 , (1964, 10, 16))
@@ -171,7 +196,7 @@ createFixture = do
       , ("Marinda"  , 5 , (1983, 8, 22))
       , ("Clara"    , 3 , (1987, 3, 24))
       ]
-  newEmployees@[marsha, willard, bryon, chanelle, vikki] <- insertEmployees
+  [marsha, willard, bryon, chanelle, vikki] <- insertEmployees
     [ ("Marsha"  , (1992, 10, 10), 2000)
     , ("Willard" , (1982, 3, 22) , 2000)
     , ("Bryon"   , (1956, 11, 13), 4500)
@@ -180,7 +205,7 @@ createFixture = do
     ]
   -- boat names from:
   -- https://www.boatus.com/products-and-services/boat-lettering/boat-names
-  newBoats@[andiamo, socialDistancing, grace, shenanigans, coolChange, knotOnCall] <-
+  [andiamo, socialDistancing, grace, shenanigans, coolChange, knotOnCall] <-
     insertBoats
       [ ("Andiamo"          , "red"  , 57)
       , ("Social Distancing", "green", 21)
@@ -191,7 +216,7 @@ createFixture = do
       ]
   -- sample equipment from:
   -- https://www.velasailingsupply.com/sailboat-equipment/sailing-accessories/
-  newEquipment@[boatHookEnd, reelTreatment, eyestrapKit, marineRotationPlate] <-
+  [boatHookEnd, reelTreatment, eyestrapKit, marineRotationPlate] <-
     insertEquipment
       [ ("Boat Hook End", "Allen Brothers 25MM Nylon Boat Hook End", 42, 723)
       , ("Reel Treatment", "ReelX Performance Reel Treatment", 10, 620)
@@ -224,7 +249,7 @@ createFixture = do
     , clockIn bryon $ makeTime 2000 10 06 09 00 00
     , clockOut bryon $ makeTime 2000 10 06 17 00 00
     ]
-  insertReservations
+  [rsv1, rsv2] <- insertReservations
     [ (hershel, andiamo   , marsha, makeTime 2020 10 03 12 01 52, 50)
     , (hershel, coolChange, marsha, makeTime 2020 10 04 12 01 52, 50)
     -- TODO: add more reservations
@@ -233,5 +258,25 @@ createFixture = do
     [ (hershel, marineRotationPlate, 1, makeTime 2020 10 03 11 50 00)
     , (hershel, boatHookEnd        , 3, makeTime 2020 10 03 11 50 00)
     -- TODO: add more equipment sales
+    ]
+  insertIncidents
+    [ ( rsv1
+      , makeTime 2020 10 03 13 00 02
+      , 3
+      , "boat ran aground"
+      , marsha
+      , False
+      , "fixed hull"
+      , 10000
+      )
+    , ( rsv1
+      , makeTime 2020 10 03 14 44 02
+      , 3
+      , "Boat sunk"
+      , marsha
+      , False
+      , "bought new boat"
+      , 1250000
+      )
     ]
   pure ()

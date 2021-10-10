@@ -77,7 +77,7 @@ data IncidentT f = Incident
   , incidentTime       :: C f LocalTime
   , incidentSev        :: C f Int32
   , incidentDsc        :: C f Text
-  , incidentResoled    :: C f Bool
+  , incidentResolved   :: C f Bool
   , incidentEid        :: PrimaryKey EmployeeT f
   , incidentResolution :: C f Text
   , incidentPid        :: PrimaryKey PaymentT f
@@ -311,6 +311,7 @@ getTable
 getTable tableSelector =
   (tableSelector companyDb, all_ $ tableSelector companyDb)
 
+-- (relation, query) pairs
 (sailorsTable, sailors) = getTable companySailors
 (employeesTable, employees) = getTable companyEmployees
 (boatsTable, boats) = getTable companyBoats
@@ -319,6 +320,7 @@ getTable tableSelector =
 (equipmentTable, equipment) = getTable companyEquipment
 (equipmentSalesTable, equipmentSales) = getTable companyEquipmentSales
 (paymentsTable, payments) = getTable companyPayments
+(incidentsTable, incidents) = getTable companyIncidents
 
 -- database connection object
 conn = getDbConn "ece464_pset1_part3"
