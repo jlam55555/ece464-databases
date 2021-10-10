@@ -98,20 +98,27 @@ insertClockTimes = makeInserter
 clockIn employee time = (employee, time, True)
 clockOut employee time = (employee, time, False)
 
+insertPayments
+  :: [(Either Sailor SailorId, Int32, LocalTime, PaymentType)] -> IO [Payment]
 insertPayments = makeInserter
   paymentsTable
-  (\(sailor, cost, time, paymentType) -> Payment default_
-                                                 (pk $ rescopeSailor sailor)
-                                                 (val_ cost)
-                                                 (val_ time)
-                                                 (val_ paymentType)
+  (\(sailor, cost, time, paymentType) -> Payment
+    default_
+    (case sailor of
+      Left  sailor -> pk $ rescopeSailor sailor
+      Right sid    -> val_ sid
+    )
+    (val_ cost)
+    (val_ time)
+    (val_ paymentType)
   )
 
 -- reservation includes information about the reservation and payment
 insertReservations entries = do
   payments <- insertPayments
     (map
-      (\(sailor, _, _, time, cost) -> (sailor, cost, time, ReservesPayment))
+      (\(sailor, _, _, time, cost) -> (Left sailor, cost, time, ReservesPayment)
+      )
       entries
     )
   makeInserter
@@ -137,8 +144,7 @@ insertIncidents entries = do
   payments <- insertPayments
     (map
       (\(reservation, time, _, _, _, _, _, cost) ->
-        (-- reservesSid reservation
-         Sailor 23 "hi" 32 $ makeDay 2020 01 01, cost, time, IncidentPayment)
+        (Right $ reservesSid reservation, cost, time, IncidentPayment)
       )
       entries
     )
@@ -162,7 +168,7 @@ insertEquipmentSales entries = do
   payments <- insertPayments
     (map
       (\(sailor, equipment, count, time) ->
-        (sailor, (equipmentCost equipment) * count, time, EquipmentPayment)
+        (Left sailor, equipmentCost equipment * count, time, EquipmentPayment)
       )
       entries
     )
