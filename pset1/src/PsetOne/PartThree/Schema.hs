@@ -24,6 +24,8 @@ import           Database.PostgreSQL.Simple
 
 import           Control.Exception
 
+import           GHC.Base
+
 import           Data.Hashable
 import           Data.Int
 import           Data.Text                      ( Text )
@@ -356,3 +358,16 @@ rescopeEquipment Equipment { equipmentEqid = eqid, equipmentName = name, equipme
   = Equipment (val_ eqid) (val_ name) (val_ dsc) (val_ count) (val_ cost)
 rescopeReserves Reserves { reservesRid = rid, reservesSid = sid, reservesBid = bid, reservesEid = eid, reservesPid = pid, reservesDay = day }
   = Reserves (val_ rid) (val_ sid) (val_ bid) (val_ eid) (val_ pid) (val_ day)
+
+-- generalized syntax for joins with an arbitrary number of arguments
+newtype JoinTable be s = JT { unJT :: forall m. Table m => m (QExpr be s) }
+
+join2
+  :: BeamSqlBackend be
+  => [Q be db s (JoinTable be s)]
+  -> (Q be db s [JoinTable be s] -> QExpr be s Bool)
+  -> (Q be db s [JoinTable be s] -> t2)
+  -> Q be db s t2
+join2 queries cond res = do
+  guard_ $ cond (GHC.Base.sequence queries)
+  pure $ res (GHC.Base.sequence queries)

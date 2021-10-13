@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module PsetOne.Util where
@@ -7,6 +9,10 @@ import           Database.Beam.Backend.SQL
 import           Database.Beam.Postgres
 import           Database.PostgreSQL.Simple
 import           Database.PostgreSQL.Simple.Types
+
+import           GHC.Base                       ( liftM
+                                                , sequence
+                                                )
 
 import           Data.ByteString.UTF8           ( fromString )
 import           Data.Int                       ( Int64 )
@@ -53,3 +59,13 @@ join tab1 tab2 cond res = do
   res2 <- tab2
   guard_ $ cond res1 res2
   pure $ res res1 res2
+
+-- note: beam doesn't have a field selector option, but it is basically
+-- a monad bind operator (much like `showLines`), so this is omittted
+-- from_ query selector = do res <- query; pure $ selector res
+-- from_ query selector = query >>= \res -> pure selector res
+-- from_ query selector = query >>= selector
+-- from_ = (>>=)
+
+-- alternatively: selector `from_` query
+-- from_ = (=<<)

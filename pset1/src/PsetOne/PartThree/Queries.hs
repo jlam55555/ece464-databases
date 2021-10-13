@@ -70,8 +70,16 @@ querySailorsSpending = do
 
 -- get all pairs of sailors and employees who have met through some transaction
 -- (i.e., through reservations or incidents)
-querySailorsServicedEmployees = runSelect $ join
-  boats
-  (join sailors reserves joinOnSid (,))
-  (\boat (_, reservation) -> joinOnBid boat reservation)
-  (,)
+
+-- querySailorsServicedEmployees =
+--   runSelect
+--     -- $ orderBy_ (\(EmployeeId eid, _, SailorId sid, _) -> (asc_ eid, desc_ sid))
+--     $ nub_
+--     $ join2 [incidents, reserves] (\[a, b] -> True) (\[a, b] -> True)
+--     -- $ (   (join employees
+--     --             (join sailors reserves joinOnSid (,))
+--     --             (\e (_, r) -> reservesEid r `references_` e)
+--     --             (,)
+--     --       )
+--     --   >>= \(e, (s, _)) -> pure (pk e, employeeEname e, pk s, sailorSname s)
+--     --   )
