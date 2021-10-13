@@ -79,19 +79,19 @@ createFixture = do
     , clockIn bryon $ makeTime 00002021 10 06 09 00 00
     , clockOut bryon $ makeTime 0002021 10 06 17 00 00
     , clockIn chanelle $ makeTime 02021 10 03 09 00 00
-    , clockOut chanelle $ makeTime 2021 10 03 05 00 00
+    , clockOut chanelle $ makeTime 2021 10 03 17 00 00
     , clockIn chanelle $ makeTime 02021 10 04 09 00 00
-    , clockOut chanelle $ makeTime 2021 10 04 05 00 00
+    , clockOut chanelle $ makeTime 2021 10 04 17 00 00
     , clockIn chanelle $ makeTime 02021 10 05 09 00 00
-    , clockOut chanelle $ makeTime 2021 10 05 05 00 00
+    , clockOut chanelle $ makeTime 2021 10 05 17 00 00
     , clockIn chanelle $ makeTime 02021 10 06 09 00 00
-    , clockOut chanelle $ makeTime 2021 10 06 05 00 00
+    , clockOut chanelle $ makeTime 2021 10 06 17 00 00
     , clockIn chanelle $ makeTime 02021 10 07 09 00 00
-    , clockOut chanelle $ makeTime 2021 10 07 05 00 00
+    , clockOut chanelle $ makeTime 2021 10 07 17 00 00
     , clockIn vikki $ makeTime 00002021 10 03 09 00 00
-    , clockOut vikki $ makeTime 0002021 10 03 05 00 00
+    , clockOut vikki $ makeTime 0002021 10 03 17 00 00
     , clockIn vikki $ makeTime 00002021 10 07 09 00 00
-    , clockOut vikki $ makeTime 0002021 10 07 05 00 00
+    , clockOut vikki $ makeTime 0002021 10 07 17 00 00
     ]
   [rsv1, rsv2, _, _, _, rsv3, _, _, rsv4, _, _, _, _, rsv5] <-
     insertReservations

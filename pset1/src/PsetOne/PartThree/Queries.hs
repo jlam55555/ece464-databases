@@ -12,6 +12,7 @@ import           PsetOne.Util
 import           Database.Beam
 
 import           Data.Int                       ( Int32 )
+import           Data.Time                      ( diffLocalTime )
 
 runSelect query = run $ runSelectReturningList $ select query
 runSelectOne query = run $ runSelectReturningOne $ select query
@@ -126,3 +127,34 @@ querySailorMostBoatHookEnds = run $ runSelectReturningList $ selectWith $ do
         )
     $ reuse sailorsBoatHookEnds
 
+-- count the number of hours each employee has clocked in
+-- time conversion functions are annoying in SQL, do logic in Haskell instead
+queryTotalHoursWorked =
+  let cts flt = runSelect $ filter_ flt clockTimes >>= pure . clocktimeTime
+  in  do
+        beginTimes <- cts clocktimeType
+        endTimes   <- cts $ not_ . clocktimeType
+        -- shift should have one start and end time
+        -- should be exactly as many start as end times
+        pure $ if length beginTimes /= length endTimes
+          then (-1) -- error
+          else
+            ( foldl (+) 0
+              $ map
+                  (realToFrac . (uncurry diffLocalTime))
+                  (zip endTimes beginTimes)
+              )
+              / 3600
+
+-- an equivalent query to check the result:
+-- (formatted using https://www.dpriver.com/pp/sqlformat.htm)
+-- SELECT ( ts1 - ts2 ) total_hours_worked
+-- FROM   (SELECT Sum(ts1) ts1
+--         FROM   (SELECT EXTRACT(EPOCH FROM time) ts1
+--                 FROM   clock_times
+--                 WHERE  type <> true) _) _
+--        FULL JOIN (SELECT Sum(ts2) ts2
+--                   FROM   (SELECT EXTRACT(EPOCH FROM time) ts2
+--                           FROM   clock_times
+--                           WHERE  type) _) __
+--               ON true; 
