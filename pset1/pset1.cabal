@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       PsetOne.PartThree.Fixture
+      PsetOne.PartThree.Inserters
+      PsetOne.PartThree.Queries
       PsetOne.PartThree.Schema
       PsetOne.PartTwo.Queries
       PsetOne.PartTwo.Schema

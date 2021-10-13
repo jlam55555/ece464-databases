@@ -67,3 +67,11 @@ querySailorsSpending = do
   pure $ map
     (\(sid, sname, spent) -> (sid, sname, fromIntegral spent / 100.0))
     spendings
+
+-- get all pairs of sailors and employees who have met through some transaction
+-- (i.e., through reservations or incidents)
+querySailorsServicedEmployees = runSelect $ join
+  boats
+  (join sailors reserves joinOnSid (,))
+  (\boat (_, reservation) -> joinOnBid boat reservation)
+  (,)
