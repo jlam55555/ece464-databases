@@ -43,17 +43,29 @@ To run the Haskell tests, Stack needs to be installed.
 $ cd PATH_TO_REPO/pset1
 $ stack test
 ```
-The Haskell code can also be called interactively using `stack ghci`, which should automatically load the project files. Then any of the sample queries provided in `PsetOne.PartTwo.Queries` or `PsetOne.PartThree.Queries` can be run by calling their name, e.g.:
+(This will take a long time on first run, as Stack will install `ghci`, as well as compile and install the required project libraries. After that, it will be relatively quick.)
+
+As is standard for a Stack project, the source ("library") modules are under the `src/` directory, and the tests are located under the `tests/` directory. The filenames should be easy to follow.
+
+The Haskell code can also be called interactively using `stack ghci`, which should automatically load the project files. Then any of the sample queries provided in [`PsetOne.PartTwo.Queries`][p2queries] or [`PsetOne.PartThree.Queries`][p3queries] can be run by calling their name, e.g.:
 ```bash
 $ cd PATH_TO_REPO/pset1
 $ stack ghci
 > querySailorsSpending
-[(SailorId 1,"Hershel",13531.12),(SailorId 2,"Joeann",1.5),(SailorId 3,"Vania",51.5),(SailorId 4,"Katheryn",0.5),(SailorId 5,"Shanika",0.5),(SailorId 6,"Madeleine",14.46),(SailorId 7,"Li",0.5),(SailorId 8,"Zachariah",0.5),(SailorId 9,"Marinda",7.07),(SailorId 10,"Clara",7.23)]
+[(SailorId 1,"Hershel",13531.12),(SailorId 2,"Joeann",1.5),(SailorId ...
 ```
 
 --- 
 
 ### Part 1
+
+---
+
+### Part 2
+
+---
+
+### Part 3
 
 [res]: ./res
 [assignment]: ./res/pset1_assignment.md
@@ -63,3 +75,5 @@ $ stack ghci
 [beam-core]: https://hackage.haskell.org/package/beam-core-0.9.1.0
 [beam-postgres]: https://hackage.haskell.org/package/beam-core-0.9.1.0
 [pg_hba.conf]: https://www.postgresql.org/docs/9.1/auth-pg-hba-conf.html
+[p2queries]: ./src/PsetOne/PartTwo/Queries.hs
+[p3queries]: ./src/PsetOne/PartThree/Queries.hs
