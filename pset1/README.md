@@ -59,6 +59,16 @@ $ stack ghci
 
 ### Part 1
 
+The SQL queries are located in [`res/pset1_part1.sql`][p1queries]. The queries can be run using:
+```bash
+$ psql -a -U ece464 -d ece464_pset1 <pset1_part1.sql
+```
+(The `-a` flag also prints out the queries.) The output of running this command is found in [`res/pset1_part1.out`][p1out].
+
+Notes:
+- I did not try to optimize for smaller intermediate tables like we did in class. I assume that PostgreSQL (being a widely-used, commercial DBMS) optimizes away unused columns in intermediate tables.
+- I used CTE's when possible to avoid repeated queries.
+
 ---
 
 ### Part 2
@@ -75,5 +85,7 @@ $ stack ghci
 [beam-core]: https://hackage.haskell.org/package/beam-core-0.9.1.0
 [beam-postgres]: https://hackage.haskell.org/package/beam-core-0.9.1.0
 [pg_hba.conf]: https://www.postgresql.org/docs/9.1/auth-pg-hba-conf.html
+[p1queries]: ./res/pset1_part1.sql
+[p1out]: ./res/pset1_part1.out
 [p2queries]: ./src/PsetOne/PartTwo/Queries.hs
 [p3queries]: ./src/PsetOne/PartThree/Queries.hs

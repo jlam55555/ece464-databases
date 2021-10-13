@@ -1,0 +1,218 @@
+-- Usage: (-a flag to print out script lines as they are read)
+-- $ psql -a -U ece464 -d ece464_pset1 <pset1_part1.sql
+-- NOTE: If there is a tie (non-unique answer), all valid answers
+-- will be returned.
+-- List, for every boat, the number of times it has been reserved,
+-- excluding those boats that have never been reserved (list the id
+-- and the name).
+SELECT bid, bname, reserve_count
+FROM (
+     SELECT bid, COUNT(*) reserve_count
+     FROM reserves
+     JOIN boats USING (bid)
+     GROUP BY bid
+) _
+JOIN boats USING (bid)
+ORDER BY bid ASC;
+ bid |   bname   | reserve_count 
+-----+-----------+---------------
+ 101 | Interlake |             2
+ 102 | Interlake |             3
+ 103 | Clipper   |             3
+ 104 | Clipper   |             5
+ 105 | Marine    |             3
+ 106 | Marine    |             3
+ 107 | Marine    |             1
+ 108 | Driftwood |             1
+ 109 | Driftwood |             4
+ 110 | Klapser   |             3
+ 111 | Sooney    |             1
+ 112 | Sooney    |             1
+(12 rows)
+
+-- List those sailors who have reserved every red boat (list the id
+-- and the name).
+SELECT sid, sname
+FROM sailors s
+WHERE NOT EXISTS (
+      -- red boat not reserved by them
+      SELECT bid
+      FROM boats b
+      WHERE color='red'
+      AND NOT EXISTS (
+            SELECT bid
+            FROM reserves r
+            WHERE r.sid=s.sid AND r.bid=b.bid
+      )
+);
+ sid | sname 
+-----+-------
+(0 rows)
+
+-- List those sailors who have reserved only red boats.
+-- sailors who have reserved a red boat
+-- - sailors that have reserved other colors
+SELECT sid, sname
+FROM (
+     -- sailors who have reserved red boats
+     SELECT DISTINCT sid
+     FROM reserves
+     JOIN (
+          SELECT bid
+          FROM boats
+          WHERE color='red'
+     ) _ USING (bid)
+     EXCEPT (
+            -- sailors who have reserved other color boats
+            SELECT DISTINCT sid
+            FROM reserves
+            JOIN (
+                 SELECT bid
+                 FROM boats
+                 WHERE color<>'red'
+            ) _ USING (bid)
+     )
+) _
+JOIN sailors USING (sid);
+ sid |  sname   
+-----+----------
+  23 | emilio
+  24 | scruntus
+  35 | figaro
+  61 | ossola
+  62 | shaun
+(5 rows)
+
+-- For which boat are there the most reservations?
+WITH reserves_by_boat AS (
+     SELECT bid, COUNT(*) res_count
+     FROM reserves
+     GROUP BY bid
+)
+SELECT bid, bname, res_count
+FROM reserves_by_boat
+JOIN boats USING (bid)
+WHERE res_count=(
+      SELECT MAX(res_count)
+      FROM reserves_by_boat
+);
+ bid |  bname  | res_count 
+-----+---------+-----------
+ 104 | Clipper |         5
+(1 row)
+
+-- Select all sailors who have never reserved a red boat.
+SELECT sid, sname
+FROM sailors
+EXCEPT (
+       SELECT sid, sname
+       FROM sailors
+       JOIN reserves USING (sid)
+       JOIN (
+            SELECT bid
+            FROM boats
+            WHERE color='red'
+       ) _ USING (bid)
+)
+ORDER BY sid;
+ sid |  sname  
+-----+---------
+  29 | brutus
+  32 | andy
+  58 | rusty
+  60 | jit
+  71 | zorba
+  74 | horatio
+  85 | art
+  90 | vin
+  95 | bob
+(9 rows)
+
+-- Find the average age of sailors with a rating of 10.
+SELECT AVG(age) ave_age
+FROM sailors
+WHERE rating=10;
+       ave_age       
+---------------------
+ 35.0000000000000000
+(1 row)
+
+-- For each rating, find the name and id of the youngest sailor.
+-- NOTE: will not show ratings that are not assigned to anyone
+SELECT sname, sid, rating, age
+FROM sailors
+JOIN (
+      SELECT rating, MIN(age) age
+      FROM sailors
+      GROUP BY rating
+) _ USING (rating, age)
+ORDER BY rating DESC;
+  sname   | sid | rating | age 
+----------+-----+--------+-----
+ zorba    |  71 |     10 |  35
+ shaun    |  62 |     10 |  35
+ rusty    |  58 |     10 |  35
+ jit      |  60 |     10 |  35
+ dan      |  88 |      9 |  25
+ horatio  |  74 |      9 |  25
+ andy     |  32 |      8 |  25
+ stum     |  59 |      8 |  25
+ horatio  |  64 |      7 |  16
+ ossola   |  61 |      7 |  16
+ art      |  85 |      3 |  25
+ dye      |  89 |      3 |  25
+ scruntus |  24 |      1 |  33
+ brutus   |  29 |      1 |  33
+(14 rows)
+
+-- Select, for each boat, the sailor who made the highest number of
+-- reservations for that boat.
+-- NOTE: assumes that all boats have had at least one reservation
+-- (true in this case)
+WITH reservation_counts AS (
+     -- reservation count for bid, sid pairs
+     SELECT bid, sid, COUNT(*) res_count
+     FROM boats
+     JOIN reserves USING (bid)
+     GROUP BY bid, sid
+)
+SELECT bid, sid, sname, res_count
+FROM (
+     -- select maximum reservations for each boat
+     SELECT bid, MAX(res_count) res_count
+     FROM reservation_counts
+     GROUP BY bid
+) _
+JOIN reservation_counts USING (bid, res_count)
+JOIN sailors USING (sid)
+ORDER BY bid;
+ bid | sid |  sname   | res_count 
+-----+-----+----------+-----------
+ 101 |  64 | horatio  |         1
+ 101 |  22 | dusting  |         1
+ 102 |  64 | horatio  |         1
+ 102 |  31 | lubber   |         1
+ 102 |  22 | dusting  |         1
+ 103 |  22 | dusting  |         1
+ 103 |  74 | horatio  |         1
+ 103 |  31 | lubber   |         1
+ 104 |  22 | dusting  |         1
+ 104 |  31 | lubber   |         1
+ 104 |  35 | figaro   |         1
+ 104 |  24 | scruntus |         1
+ 104 |  23 | emilio   |         1
+ 105 |  59 | stum     |         1
+ 105 |  35 | figaro   |         1
+ 105 |  23 | emilio   |         1
+ 106 |  60 | jit      |         2
+ 107 |  88 | dan      |         1
+ 108 |  89 | dye      |         1
+ 109 |  60 | jit      |         1
+ 109 |  90 | vin      |         1
+ 109 |  89 | dye      |         1
+ 109 |  59 | stum     |         1
+ 110 |  88 | dan      |         2
+ 111 |  88 | dan      |         1
+ 112 |  61 | ossola   |         1
+(26 rows)
+
