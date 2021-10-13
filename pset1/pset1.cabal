@@ -57,6 +57,7 @@ test-suite pset1-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      PsetOne.PartThree.QueriesSpec
       PsetOne.PartTwo.QueriesSpec
       Paths_pset1
   hs-source-dirs:

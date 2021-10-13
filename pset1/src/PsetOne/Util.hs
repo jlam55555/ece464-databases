@@ -39,8 +39,10 @@ getDbConn dbName = connect defaultConnectInfo { connectUser     = "ece464"
 
 -- helper for running queries with debug printing
 runQuery :: IO Connection -> Pg b -> IO b
+-- runQuery conn query =
+--   conn >>= \conn -> runBeamPostgresDebug putStrLn conn query
 runQuery conn query =
-  conn >>= \conn -> runBeamPostgresDebug putStrLn conn query
+  conn >>= \conn -> runBeamPostgres conn query
 
 -- abstracted syntax for joins; easier to use than Beam's `join_`
 join

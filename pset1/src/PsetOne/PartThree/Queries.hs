@@ -127,7 +127,7 @@ querySailorMostBoatHookEnds = run $ runSelectReturningList $ selectWith $ do
         )
     $ reuse sailorsBoatHookEnds
 
--- count the number of hours each employee has clocked in
+-- count the total number of hours employees have worked
 -- time conversion functions are annoying in SQL, do logic in Haskell instead
 queryTotalHoursWorked =
   let cts flt = runSelect $ filter_ flt clockTimes >>= pure . clocktimeTime

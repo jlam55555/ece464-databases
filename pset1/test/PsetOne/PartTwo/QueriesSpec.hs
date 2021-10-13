@@ -15,7 +15,7 @@ import           Test.Hspec
 -- check for unordered (set) equality, since order isn't specified
 
 spec :: Spec
-spec = describe "Checking correct output for queries" $ do
+spec = describe "part 2 test cases" $ do
   it
       (  "query 1: list, for every boat, the number of "
       ++ "times it has been reserved, excluding those boats "
