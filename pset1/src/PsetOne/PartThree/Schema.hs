@@ -340,10 +340,9 @@ cleanupSchema = runSqlFile conn "res/pset1_part3_cleanup.sql"
 -- reset schema; delete and then recreate tables
 -- (if tables do not exist, simply create them)
 resetSchema = do
-  result <- try cleanupSchema
-  case (result :: Either SqlError Int64) of
-    Right _   -> setupSchema
-    Left  err -> setupSchema
+  try cleanupSchema :: IO (Either SqlError Int64)
+  setupSchema
+  pure ()
 
 -- helper functions to convert to rescope query variables
 rescopeSailor Sailor { sailorSid = sid, sailorSname = sname, sailorRating = rating, sailorDob = dob }

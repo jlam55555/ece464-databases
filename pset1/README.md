@@ -115,7 +115,7 @@ WHERE NOT EXISTS (
       )
 );
 ```
-This gives a type error, while the following does not:
+This gives a type error in the Haskell implementation (the SQL works fine by itself), while the following does not:
 
 ```sql
 SELECT s.sid, s.sname
@@ -140,7 +140,7 @@ except_ :: Q be db (QNested s) a
 > :t exists_
 exists_ :: Q be db s a -> QExpr be s Bool
 ```
-What is important to take note of is that `except_` is written as a binary expression requiring two queries with a nested context (however, the inner context is inferred to be `QBaseScope` because it involves the outer scope's `s` table). On the other hand, `exists_` is written as a unary operation, and there doesn't have to be an agreement among its "operands." Luckily, it is not difficult to rewrite `EXCEPT` clauses in terms of `EXISTS`. I believe this is a Beam bug but there might be some mathematical reason it is broken. Other ORM's like SQLAlchemy probably don't have this restriction, but they also either produce incorrect code or require run-time checking, both of which are tradeoffs.
+What is important to take note of is that `except_` is written as a binary expression requiring two queries with a nested context, which ensures that the outer result cannot be used inside either of the subqueries, especially in the case of lateral joins or correlated subqueries returning a single value (which are supported in Beam using the alternate syntaxes `lateral_` and `subquery_`). However, the inner context is inferred to be `QBaseScope` because it involves the outer scope's `s` table so this breaks the correlated query returning an array of values. On the other hand, `exists_` is written as a unary operation, and there doesn't have to be an agreement among its "operands." Luckily, it is not difficult to rewrite `EXCEPT` clauses in terms of `EXISTS`. I believe this is a Beam bug but there might be some mathematical reason it is broken. Other ORM's like SQLAlchemy probably don't have this restriction, but they also either produce incorrect code or require run-time checking, both of which are tradeoffs.
 
 This qualm about Beam is perhaps a very Haskell-like issue. [Here][rdbms-comparison] is a good comparison between Beam and other Haskell RDBMS (ORM-like) libraries -- among them, Beam may be the most enterprise ready. The author mentions that it's "finnicky" and requires a lot of deeply parameterized type boilerplate and type trickery, but that also makes it extremely well-typed when it works. The others on the list tend to be less type-finnicky but also sometimes missing features, not backend-agnostic (which Beam is), or pretty much a transliteration of SQL into Haskell (defeating the purpose of an ORM). If nothing else, the complicated types in Beam were a great learning experience into practical Haskell.
 
@@ -166,7 +166,50 @@ The following tables were added to the database schema:
 
 Unlike parts one and two, in which the test fixture is given to us as part of the setup SQL file, I decided to write helper functions to insert data which get called by `createFixture` which sets up some test data. Programmatically creating the test fixture allows us to more semantically and correctly enforce relationships. For example, in the original schema, it may be easy to accidentally input the wrong sailor ID into the reservations table without detecting an error (and this is compounded by the fact that foreign key constraints were not placed in the given schema). However, by programmatically inserting test fixture entries, we get a number of benefits: we can programmatically check constraints that are not enforced by the DBMS (e.g., we can check that a boat is not checked out more than once on a day, or that clock in/out times are possible), relational keys cannot be mistyped, and dependent entities (such as the payment associated with an equipment sale) may be created automatically.
 
-A few test cases are provided in the same manner as for part two to demonstate the general behavior. These test cases are by no means exhaustive. This is a much larger schema, and the number of useful queries (probably) grows at least quadratically with the number of tables. These queries are more to show that the relations used can model complex relationships between more than two entities (sailors, employees, boats, reservations, incidents, payments, equipment, equipment sales, and work shifts) in varied types of relationships. The test cases programatically create the test fixture on startup by calling `createFixture`.
+A few test cases are provided in the same manner as for part two to demonstate the general behavior. These test cases are by no means exhaustive. This is a much larger schema, and the number of useful queries (probably) grows at least quadratically with the number of tables. These queries are more to show that the relations used can model complex relationships between more than two entities (sailors, employees, boats, reservations, incidents, payments, equipment, equipment sales, and work shifts) in varied types of relationships. The test cases programatically create the test fixture on startup by calling `createFixture`. (Note: this also considerably slows down the testing and is not strictly necessary; this just ensures a consistent environment, which would be useful if any of the test cases updated the database.)
+
+A sample run of the test cases from calling `stack test` (including those from part 2) gives the following output:
+```text
+pset1-0.1.0.0: unregistering (local file changes: test/PsetOne/PartThree/QueriesSpec.hs)
+pset1> build (lib + test)
+Preprocessing library for pset1-0.1.0.0..
+Building library for pset1-0.1.0.0..
+Preprocessing test suite 'pset1-test' for pset1-0.1.0.0..
+Building test suite 'pset1-test' for pset1-0.1.0.0..
+[3 of 4] Compiling PsetOne.PartThree.QueriesSpec
+[4 of 4] Compiling Main [PsetOne.PartThree.QueriesSpec changed]
+Linking .stack-work/dist/x86_64-linux-tinfo6/Cabal-3.2.1.0/build/pset1-test/pset1-test ...
+pset1> copy/register
+Installing library in /home/jon/Documents/ece464_assignments/pset1/.stack-work/install/x86_64-linux-tinfo6/7835068286f9d809102dce0bb72ae339ae3e52a68062e0367651b963cb7ef75a/8.10.7/lib/x86_64-linux-ghc-8.10.7/pset1-0.1.0.0-5sYq2SRQCXXCVFgYiCTO9E
+Registering library for pset1-0.1.0.0..
+pset1> test (suite: pset1-test)
+
+
+PsetOne.PartThree.Queries
+  part 3 test cases
+    get sailors who have reserved all red boats
+    get sailors who have reserved only red boats
+    get sailors along with how much they have spent
+    get all pairs of sailors and employees who have met through some transaction (i.e., through reservations or incidents)
+    get the sailor who has bought the most boat hook ends
+    count the total number of hours employees have worked
+PsetOne.PartTwo.Queries
+  part 2 test cases
+    query 1: list, for every boat, the number of times it has been reserved, excluding those boats that have never been reserved
+    query 2: list those sailors who have reserved every red boat
+    query 3: list those sailors who have reserved only red boats
+    query 4: for which boat are there the most reservations
+    query 5: select all sailors who have never reserved a red boat
+    query 6: average age of sailors with a rating of 10
+    query 7: for each rating, find the name and id of the youngest sailor
+    query 8: select, for each boat, the sailor who made the highest number of reservations for that boat
+
+Finished in 2.6029 seconds
+14 examples, 0 failures
+
+pset1> Test suite pset1-test passed
+Completed 2 action(s).
+```
 
 [res]: ./res
 [assignment]: ./res/pset1_assignment.md

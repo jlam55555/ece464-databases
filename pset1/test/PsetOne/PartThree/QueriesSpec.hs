@@ -13,7 +13,7 @@ import           Data.HashSet
 import           Test.Hspec
 
 spec :: Spec
-spec = describe "part 3 test cases" $ do
+spec = before_ createFixture $ describe "part 3 test cases" $ do
   it "get sailors who have reserved all red boats" $ do
     result <- querySailorsReservedAllRedBoats
     shouldBe (fromList result)
