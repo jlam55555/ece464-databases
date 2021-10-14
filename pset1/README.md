@@ -98,13 +98,51 @@ The Beam ORM is more of a SQL library than anything -- it only uses the term ORM
 - Haskell is statically typed, which allows for aggressive type-checking and optimizations (e.g., type erasure). Adding too many layers of complexity might overcomplicate the type system.
 - There is a relatively small community actively working on Beam and Haskell. Beam is already one of the larger RDBMS systems in Haskell, and yet it doesn't have good support for backends other than SQLite and PostgreSQL because it is not that large. (Speaking relative to Python and many OOP languages.)
 
-If anything, the best aspect about the Beam library is its type-checking. This did cause a lot of frustration for me because of how strict it is, but the compiled code never produced a SQL error, and the Haskell type bugs that are produced are much more informative than the SQL bugs (most of which follow the unhelpful format "You have a SQL error near x"). That being said, as someone who is relatively new to Haskell's H-M type system (that stems from the ML family of programming languages), understanding and overcoming type errors (and knowing when to give up) took by far the most time of my work on this project.
+If anything, the best ORM feature about the Beam library is its type-checking. This did cause a lot of frustration for me because of how strict it is, but the compiled code never produced a SQL error, and the Haskell type bugs that are produced are much more informative than the SQL bugs (most of which follow the unhelpful format "You have a SQL error near x"). That being said, as someone who is relatively new to Haskell's H-M type system (that stems from the ML family of programming languages), understanding and overcoming type errors (and knowing when to give up) took by far the most time of my work on this project.
 
-One example of an issue that I was unable to solve was due to the Beam library being over-strict about scoping in a way that prevents a certain type of correlated subqueries.
+One example of an issue that I was unable to solve was due to the Beam library being over-strict about scoping in a way that prevents a certain type of correlated subqueries. In particular, Beam and a more academic RDBMS library called Selda introduced the idea of a "state threading parameter" which prevents incompatible queries from being used together in certain operations, introduced in [(Eckbald 2019)][eckbald]. This is most apparent with nested operations: the outermost query is inferred to have the context `QBaseScope`, and a nested subquery created by a nesting command such as `EXISTS` has scope `QNested (QBaseScope)`, and this nesting can continue. The problem is that some subquery operations do not allow ther operands to come from different scopes because the Haskell types are incompatible. In particular, I had a problem with query 2, find sailors who have reserved all red boats, which I had written the following query for:
+```sql
+SELECT s.sid, s.sname
+FROM sailors s
+WHERE NOT EXISTS (
+      SELECT b.bid
+      FROM boats b
+      WHERE color='red'
+      EXCEPT (
+             SELECT r.bid
+             FROM reserves r
+             WHERE r.sid=s.sid
+      )
+);
+```
+This gives a type error, while the following does not:
 
-TODO: 
+```sql
+SELECT s.sid, s.sname
+FROM sailors s
+WHERE NOT EXISTS (
+    SELECT b.bid
+    FROM boats b
+    WHERE color='red'
+    AND NOT EXISTS (
+        SELECT r.bid
+        FROM reserves r
+        WHERE r.bid=b.bid AND r.sid=s.sid
+    )
+);
+```
+This example was the only one of the queries I tried that was rejected by the type system. Other types of nesting (e.g., correlated subqueries that return a single value, CTEs) have special constructs that allow them to work. It only seems that nested subqueries with set operations (e.g., `EXCEPT`, `UNION`) are a problem. We can see why when looking at the type declarations for the `except_` and `exists_` Beam library functions (simplified for legibility):
+```haskell
+> :t except_
+except_ :: Q be db (QNested s) a
+     -> Q be db (QNested s) a
+     -> Q be db s (WithRewrittenThread (QNested s) s a)
+> :t exists_
+exists_ :: Q be db s a -> QExpr be s Bool
+```
+What is important to take note of is that `except_` is written as a binary expression requiring two queries with a nested context (however, the inner context is inferred to be `QBaseScope` because it involves the outer scope's `s` table). On the other hand, `exists_` is written as a unary operation, and there doesn't have to be an agreement among its "operands." Luckily, it is not difficult to rewrite `EXCEPT` clauses in terms of `EXISTS`. I believe this is a Beam bug but there might be some mathematical reason it is broken. Other ORM's like SQLAlchemy probably don't have this restriction, but they also either produce incorrect code or require run-time checking, both of which are tradeoffs.
 
-TODO: include article about different Haskell RDBMS libraries
+This qualm about Beam is perhaps a very Haskell-like issue. [Here][rdbms-comparison] is a good comparison between Beam and other Haskell RDBMS (ORM-like) libraries -- among them, Beam may be the most enterprise ready. The author mentions that it's "finnicky" and requires a lot of deeply parameterized type boilerplate and type trickery, but that also makes it extremely well-typed when it works. The others on the list tend to be less type-finnicky but also sometimes missing features, not backend-agnostic (which Beam is), or pretty much a transliteration of SQL into Haskell (defeating the purpose of an ORM). If nothing else, the complicated types in Beam were a great learning experience into practical Haskell.
 
 ---
 
@@ -130,8 +168,6 @@ Unlike parts one and two, in which the test fixture is given to us as part of th
 
 A few test cases are provided in the same manner as for part two to demonstate the general behavior. These test cases are by no means exhaustive. This is a much larger schema, and the number of useful queries (probably) grows at least quadratically with the number of tables. These queries are more to show that the relations used can model complex relationships between more than two entities (sailors, employees, boats, reservations, incidents, payments, equipment, equipment sales, and work shifts) in varied types of relationships. The test cases programatically create the test fixture on startup by calling `createFixture`.
 
-TODO: create fixture in the test cases
-
 [res]: ./res
 [assignment]: ./res/pset1_assignment.md
 [stack]: https://docs.haskellstack.org/en/stable/README/
@@ -146,3 +182,5 @@ TODO: create fixture in the test cases
 [p3queries]: ./src/PsetOne/PartThree/Queries.hs
 [brittany]: https://hackage.haskell.org/package/brittany
 [p2package]: ./src/PsetOne/PartTwo
+[eckbald]: https://icfp19.sigplan.org/details/haskellsymp-2019-papers/10/Scoping-Monadic-Relational-Database-Queries
+[rdbms-comparison]: https://www.williamyaoh.com/posts/2019-12-14-typesafe-db-libraries.html
