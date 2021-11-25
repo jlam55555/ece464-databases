@@ -49,14 +49,14 @@
 (defvar *test3* (remove-if-not (lambda (url) (str:starts-with? *item-url-base* url)) *test2*))
 
 ;;; map links to item ID's
+(defun item-url-to-id (url)
+  (parse-integer
+   (cadr (str:rsplit "/"
+                     (quri:render-uri (quri:make-uri :defaults url :query '()))
+                     :limit 2))))
+
 (defvar *test4*
-  (map 'vector
-       (lambda (url)
-         (parse-integer
-          (cadr (str:rsplit "/"
-                            (quri:render-uri (quri:make-uri :defaults url :query '()))
-                            :limit 2))))
-       *test3*))
+  (map 'vector #'item-url-to-id *test3*))
 
 ;;; for a single item URI
 (defun remove-comments (dom)
@@ -111,3 +111,99 @@
   (str:trim
    (str:collapse-whitespaces
     (lquery-funcs:text *desc-iframe-dom*))))
+
+;;; condition information
+(defvar *condition-message*
+  (aref (lquery:$ *item-dom* ".topItmCndDscMsg" (text)) 0))
+
+;;; seller name
+(defvar *seller-name*
+  (str:trim (aref (lquery:$ *item-dom* ".si-content a" (text)) 0)))
+
+;;; shipping information
+(defvar *item-location*
+  (str:trim (aref (lquery:$ *item-dom* ".sh-loc" (text)) 0)))
+
+;;; shipping to (includes and excludes list)
+(defvar *ships-to*
+  (let ((includes-excludes
+          (map 'vector
+               (lambda (s)
+                 (str:split
+                  ", "
+                  (cadr (str:split ": " (str:trim (str:collapse-whitespaces s)) :limit 2))))
+               (lquery:$ *item-dom* ".sh-sLoc" (text)))))
+    includes-excludes))
+
+;;; shipping policies
+(defvar *shipping-policies*
+  (map 'vector
+       (lambda (s) (str:trim (str:collapse-whitespaces s)))
+       (lquery:$ *item-dom* ".sh-tbl tbody" (text))))
+
+;;; return policies
+(defvar *return-policies*
+  (remove-if
+   (lambda (s) (string= s ""))
+   (map 'vector
+        (lambda (s) (str:trim (str:collapse-whitespaces s)))
+        (lquery:$ *item-dom* ".rpTbl" (text)))))
+
+;;; payment policies
+(defvar *payment-policies*
+  (map 'vector
+       (lambda (s) (str:trim (str:collapse-whitespaces s)))
+       (lquery:$ *item-dom* ".pd-data-tbl tbody" (text))))
+
+;;; people who viewed this item also viewed...
+(defvar *phvtiav-dom*
+  (let ((merch-modules
+          (lquery:$ *item-dom* ".merch-module section")))
+    (aref (remove-if-not
+           (lambda (section)
+             (string=
+              (aref (lquery:$ section ".merch-title" (text)) 0)
+              "People who viewed this item also viewed"))
+           merch-modules) 0)))
+(defvar *phvtiav-ids*
+  (map 'vector
+       #'item-url-to-id
+       (lquery:$ *phvtiav-dom* "a" (attr :href))))
+
+;;; get images
+(defvar *image-urls*
+  (delete-duplicates
+   (map
+    'vector
+    ;; replace with larger image
+    (lambda (url)
+      (cl-ppcre:regex-replace
+       "-l([0-9]+)(.[a-z]+)$"
+       url
+       (lambda (_ &rest groups)
+         (declare (ignore _))
+         (concatenate 'string "-l2000" (cadr groups)))
+       :simple-calls T))
+    (remove-if
+     (lambda (url) (str:contains? "ebaystatic.com" url))
+     (lquery:$ *item-dom* "#PicturePanel img" (attr :src))))
+   :test #'string=))
+
+;;; putting all the data together
+(defvar *item-info*
+  (list
+   (cons 'id *item-id*)
+   (cons 'name *item-name*)
+   (cons 'itemprops *item-itemprops*)
+   (cons 'about *item-about-this-item*)
+   (cons 'desc-text *desc-text*)
+   (cons 'desc-iframe-text *desc-iframe-text*)
+   (cons 'condition-message *condition-message*)
+   (cons 'seller-name *seller-name*)
+   (cons 'item-location *item-location*)
+   (cons 'ships-to *ships-to*)
+   (cons 'shipping-policies *shipping-policies*)
+   (cons 'return-policies *return-policies*)
+   (cons 'payment-policies *payment-policies*)
+   (cons 'phvtiav-ids *phvtiav-ids*)
+   (cons 'image-urls *image-urls*)))
