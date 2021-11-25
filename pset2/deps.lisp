@@ -9,4 +9,5 @@
    :quri                                ; URL parsing
    :parachute                           ; test framework
    :cl-mongo                            ; MongoDB driver
+   :parse-float                         ; deserialize floats
    ))

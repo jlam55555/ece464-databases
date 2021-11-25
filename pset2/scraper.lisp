@@ -45,7 +45,8 @@
 (defvar *test2* (query-attr (scrape "https://www.ebay.com/sch/i.html?_nkw=nvidia+rtx8000") "a" :href))
 
 ;;; get only item links
-(defvar *test3* (remove-if-not (lambda (url) (str:starts-with? "https://www.ebay.com/itm/" url)) *test2*))
+(defvar *item-url-base* "https://www.ebay.com/itm/")
+(defvar *test3* (remove-if-not (lambda (url) (str:starts-with? *item-url-base* url)) *test2*))
 
 ;;; map links to item ID's
 (defvar *test4*
@@ -56,3 +57,29 @@
                             (quri:render-uri (quri:make-uri :defaults url :query '()))
                             :limit 2))))
        *test3*))
+
+;;; for a single item URI
+(defun remove-comments (dom)
+  (lquery:parse-html
+   (cl-ppcre:regex-replace-all "<!--(.*?)-->" (lquery-funcs:serialize (lquery-funcs:node dom)) "")))
+
+(defvar *item-id* (aref *test4* 1))
+(defvar *item-url* (concatenate 'string *item-url-base* (write-to-string *item-id*)))
+(defvar *item-dom*
+  (let ((dom-no-comments (lquery-funcs:root (remove-comments (scrape *item-url*)))))
+    (lquery:initialize dom-no-comments)
+    dom-no-comments))
+(defvar *item-name* (query-text *item-dom* "#itemTitle"))
+(defvar *item-price*
+  (parse-float:parse-float (aref (query-attr *item-dom* ".mainPrice [itemprop='price']" :content) 0)))
+(defvar *item-currency*
+  (aref (query-attr *item-dom* ".mainPrice [itemprop='priceCurrency']" :content) 0))
+
+;;; get all itemprops (including price and currency)
+(defvar *item-itemprops*
+  (remove-if-not
+   (lambda (itemprop-list) (cadr itemprop-list))
+   (lquery:$ *item-dom* "[itemprop]" (combine (attr :itemprop) (attr :content)))))
+
+(defvar *item-about-this-item*
+  (query-text *item-dom* "[data-testid='x-about-this-item']"))
