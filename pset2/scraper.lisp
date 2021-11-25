@@ -67,6 +67,7 @@
 (defvar *item-url* (concatenate 'string *item-url-base* (write-to-string *item-id*)))
 (defvar *item-dom*
   (let ((dom-no-comments (lquery-funcs:root (remove-comments (scrape *item-url*)))))
+    (lquery:$ dom-no-comments "script,style" (remove))
     (lquery:initialize dom-no-comments)
     dom-no-comments))
 (defvar *item-name* (query-text *item-dom* "#itemTitle"))
@@ -78,8 +79,35 @@
 ;;; get all itemprops (including price and currency)
 (defvar *item-itemprops*
   (remove-if-not
-   (lambda (itemprop-list) (cadr itemprop-list))
+   (lambda (itemprop-list)
+     (and
+      (not (string=  (car itemprop-list) "position"))
+      (cadr itemprop-list)))
    (lquery:$ *item-dom* "[itemprop]" (combine (attr :itemprop) (attr :content)))))
 
+;;; get item info
+(defvar *item-about-this-item-dom*
+  (lquery:$ *item-dom* "[data-testid='x-about-this-item']"))
+(defvar *item-about-this-item-labels*
+  (lquery:$ *item-about-this-item-dom* ".ux-labels-values__labels" (text)))
+(defvar *item-about-this-item-values*
+  (lquery:$ *item-about-this-item-dom* ".ux-labels-values__values" (text)))
 (defvar *item-about-this-item*
-  (query-text *item-dom* "[data-testid='x-about-this-item']"))
+  (map 'vector
+       (lambda (label value) (cons label value))
+       *item-about-this-item-labels*
+       *item-about-this-item-values*))
+
+;;; get text from description (not in iframe)
+(defvar *desc-text*
+  (str:trim (str::collapse-whitespaces (aref (lquery:$ *item-dom* "#desc_wrapper_ctr" (text)) 0))))
+
+;;; get text from item iframe, if any
+(defvar *desc-iframe-dom*
+  (let ((dom (aref (scrape (aref (lquery:$ *item-dom* "#desc_wrapper_ctr" "iframe" (attr 'src)) 0)) 0)))
+    (lquery:$ dom "script,style" (remove))
+    dom))
+(defvar *desc-iframe-text*
+  (str:trim
+   (str:collapse-whitespaces
+    (lquery-funcs:text *desc-iframe-dom*))))
