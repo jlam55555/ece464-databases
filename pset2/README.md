@@ -21,14 +21,13 @@ $ sbcl
 ### Build instructions
 
 ##### Interactive (REPL) instructions
+The path to the quicklisp installation may have to be customized for your system.
 ```bash
-$ sbcl
-> ;;; in the SBCL REPL
-> (load "scraper.lisp")
-> .....
+$ sbcl --load ~/quicklisp/setup.lisp --load scraper.lisp
+> ; interact with scraper library here
 ```
 
-Of course, using a purpose-built Common Lisp environment (SLIME) is better than using the REPL directly.
+Of course, using a purpose-built Common Lisp environment (SLIME) is a better experience than using the REPL directly.
 
 ##### Compilation instructions
 TODO: https://stackoverflow.com/q/14171849/2397327
