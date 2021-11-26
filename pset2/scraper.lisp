@@ -4,62 +4,59 @@
 ;;; load dependencies
 (load "./deps.lisp")
 
-(defun scrape (url)
-  "Get the parsed DOM for the given URL."
-  (lquery:$ (initialize (dex:get url))))
+;; (defun query-text (dom q)
+;;   "Query text on DOM. A function wrapper around the lquery:$ macro."
+;;   (lquery:$ dom q (text)))
 
-(defun query-text (dom q)
-  "Query text on DOM. A function wrapper around the lquery:$ macro."
-  (lquery:$ dom q (text)))
+;; (defun query-attr (dom q a)
+;;   "Query an attribute on DOM. A function wrapper around the lquery:$ macro."
+;;   (lquery:$ dom q (attr a)))
 
-(defun query-attr (dom q a)
-  "Query an attribute on DOM. A function wrapper around the lquery:$ macro."
-  (lquery:$ dom q (attr a)))
+;; (defvar *test* (query-attr (scrape "https://lambdalambda.ninja") "a" :href))
 
-(defvar *test* (query-attr (scrape "https://lambdalambda.ninja") "a" :href))
+;; (defvar *paths* (map 'vector (lambda (path) (if (str:starts-with? "/" path) (concatenate 'string "https://lambdalambda.ninja" path) path)) *test*))
+;; (setf (aref *paths* 0) "https://anesriansei.osrg")
 
-(defvar *paths* (map 'vector (lambda (path) (if (str:starts-with? "/" path) (concatenate 'string "https://lambdalambda.ninja" path) path)) *test*))
-(setf (aref *paths* 0) "https://anesriansei.osrg")
+;; (defvar *lst1* (map 'vector (lambda (it) (ignore-errors (nth-value 1 (dex:get it)))) *paths*))
 
-(defvar *lst1* (map 'vector (lambda (it) (ignore-errors (nth-value 1 (dex:get it)))) *paths*))
-
-(setf lparallel:*kernel* (lparallel:make-kernel 10))
 
 ;;; remove invalid (nil) values
-(defvar *lst2*
-  (remove-if-not
-   (lambda (x) x)
-   (lparallel:pmap
-    'vector
-    (lambda (it)
-      (ignore-errors
-       (if (= 200 (nth-value 1 (dex:get it)))
-           it)))
-    *paths*)))
+
+;;; TODO: this might still be useful
+;; (defvar *lst2*
+;;   (remove-if-not
+;;    (lambda (x) x)
+;;    (lparallel:pmap
+;;     'vector
+;;     (lambda (it)
+;;       (ignore-errors
+;;        (if (= 200 (nth-value 1 (dex:get it)))
+;;            it)))
+;;     *paths*)))
 
 ;;; scrape ebay links with query
 (defvar *test2* (query-attr (scrape "https://www.ebay.com/sch/i.html?_nkw=nvidia+rtx8000") "a" :href))
 
 ;;; get only item links
-(defvar *item-url-base* "https://www.ebay.com/itm/")
-(defvar *test3* (remove-if-not (lambda (url) (str:starts-with? *item-url-base* url)) *test2*))
+;; (defvar *item-url-base* "https://www.ebay.com/itm/")
+;; (defvar *test3* (remove-if-not (lambda (url) (str:starts-with? *item-url-base* url)) *test2*))
 
 ;;; map links to item ID's
-(defun item-url-to-id (url)
-  (parse-integer
-   (cadr (str:rsplit "/"
-                     (quri:render-uri (quri:make-uri :defaults url :query '()))
-                     :limit 2))))
+;; (defun item-url-to-id (url)
+;;   (parse-integer
+;;    (cadr (str:rsplit "/"
+;;                      (quri:render-uri (quri:make-uri :defaults url :query '()))
+;;                      :limit 2))))
 
-(defvar *test4*
-  (map 'vector #'item-url-to-id *test3*))
+;; (defvar *test4*
+;;   (map 'vector #'item-url-to-id *test3*))
 
-;;; for a single item URI
-(defun remove-comments (dom)
-  (lquery:parse-html
-   (cl-ppcre:regex-replace-all "<!--(.*?)-->" (lquery-funcs:serialize (lquery-funcs:node dom)) "")))
+;; ;;; for a single item URI
+;; (defun remove-comments (dom)
+;;   (lquery:parse-html
+;;    (cl-ppcre:regex-replace-all "<!--(.*?)-->" (lquery-funcs:serialize (lquery-funcs:node dom)) "")))
 
-(defvar *item-id* (aref *test4* 1))
+;; (defvar *item-id* (aref *test4* 1))
 (defvar *item-url* (concatenate 'string *item-url-base* (write-to-string *item-id*)))
 (defvar *item-dom*
   (let ((dom-no-comments (lquery-funcs:root (remove-comments (scrape *item-url*)))))

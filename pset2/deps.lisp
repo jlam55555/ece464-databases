@@ -15,3 +15,6 @@
 ;;; https://github.com/fukamachi/dexador/issues/88#issuecomment-840114866
 (setf dexador.connection-cache::*threads-connection-pool*
       (make-hash-table :test 'equal :synchronized t))
+
+(setf lparallel:*kernel* (lparallel:make-kernel 10))
+
