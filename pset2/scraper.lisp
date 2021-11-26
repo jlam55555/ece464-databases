@@ -10,7 +10,9 @@
 
 (defun string-trim-collapse (s)
   "Helper function to trim extra spaces in text."
-  (str:trim (str:collapse-whitespaces s)))
+  (if (stringp s)
+      (str:trim (str:collapse-whitespaces s))
+      ""))
 
 (defun scrape (url)
   "Get the parsed DOM for the given URL, or an error value if the page
