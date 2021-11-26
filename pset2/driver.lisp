@@ -33,4 +33,4 @@
  (lambda (query)
    (scrape-item query)
    'ok)
- '("gpu" "cpu" "computer"))
+ '("computer mice"))
