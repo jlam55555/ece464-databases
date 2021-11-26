@@ -1,9 +1,8 @@
+;;; TODO: change some of these names later
 (load "deps")
-(load "item")
-
-;;; TODO: change these two names later
-(load "item_list")
 (load "scraper2")
+(load "item")
+(load "item_list")
 
 (defvar *item-list-dom*
   (scrape (search-query-to-url "rtx 8000")))

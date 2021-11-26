@@ -10,6 +10,7 @@
    :parachute                           ; test framework
    :cl-mongo                            ; MongoDB driver
    :parse-float                         ; deserialize floats
+   :log4cl                              ; logging
    ))
 
 ;;; https://github.com/fukamachi/dexador/issues/88#issuecomment-840114866

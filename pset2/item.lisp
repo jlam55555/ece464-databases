@@ -39,6 +39,7 @@
 
 (defun item-info (id)
   "Gets all of the item information for an item ID."
+  (log:info "Scraping item id: " id)
   (let ((dom (item-dom id)))
     (and dom
          (lparallel:pmap
