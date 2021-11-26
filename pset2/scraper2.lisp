@@ -11,6 +11,7 @@
 (defun scrape (url)
   "Get the parsed DOM for the given URL, or an error value if the page
 doesn't exist."
+  (log:info "Scraping " url)
   (handler-case (afirst (lquery:$ (initialize (dex:get url))))
     (error () nil)))
 

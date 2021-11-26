@@ -11,6 +11,7 @@
    :cl-mongo                            ; MongoDB driver
    :parse-float                         ; deserialize floats
    :log4cl                              ; logging
+   :hash-set                            ; hash sets
    ))
 
 ;;; https://github.com/fukamachi/dexador/issues/88#issuecomment-840114866
