@@ -1,8 +1,8 @@
 ;;; TODO: change some of these names later
 (load "deps")
-(load "scraper2")
+(load "scraper")
 (load "item")
-(load "item_list")
+(load "item-list")
 
 ;;; keep scraping until no new ids are found
 (defvar *item-infos*

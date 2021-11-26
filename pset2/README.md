@@ -23,7 +23,7 @@ $ sbcl
 ##### Interactive (REPL) instructions
 The path to the quicklisp installation may have to be customized for your system.
 ```bash
-$ sbcl --load ~/quicklisp/setup.lisp --load scraper.lisp
+$ sbcl --load ~/quicklisp/setup.lisp --load driver.lisp
 > ; interact with scraper library here
 ```
 
