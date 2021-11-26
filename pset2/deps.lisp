@@ -20,5 +20,5 @@
       (make-hash-table :test 'equal :synchronized t))
 
 ;;; Parallelize web requests
-(setf lparallel:*kernel* (lparallel:make-kernel 50))
+(setf lparallel:*kernel* (lparallel:make-kernel 12))
 
