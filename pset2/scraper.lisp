@@ -14,6 +14,15 @@
       (str:trim (str:collapse-whitespaces s))
       ""))
 
+(defun scrape-first-text (dom selector)
+  "Helper function to get (single) string if exists, or empty string
+otherwise."
+  (let ((selections (lquery:$ dom selector (text))))
+    (if (or (zerop (array-total-size selections))
+            (not (stringp (afirst selections))))
+        ""
+        (afirst selections))))
+
 (defun scrape (url)
   "Get the parsed DOM for the given URL, or an error value if the page
 doesn't exist."

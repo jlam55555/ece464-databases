@@ -12,15 +12,16 @@
 (load "item-list")
 
 ;;; Scrape an arbitrary search
-(defvar *item-ids*
-  (scrape-all-pages "gpu"))
+(defun insert-to-mongo (ids)
+  (lparallel:pmap
+   'vector
+   ;; directly insert into db to avoid storing intermediately in memory
+   (lambda (id)
+     (let ((doc (alist-to-document (item-info id))))
+       (sb-thread:with-mutex (*mut*)
+         (cl-mongo:db.insert *collection-name* doc)))
+     'ok)
+   ids))
 
-(lparallel:pmap
- 'vector
- ;; directly insert into db to avoid storing intermediately in memory
- (lambda (id)
-   (let ((doc (alist-to-document (item-info id))))
-     (sb-thread:with-mutex (*mut*)
-       (cl-mongo:db.insert *collection-name* doc)))
-   'ok)
-*item-ids*)
+(insert-to-mongo
+ (scrape-all-pages "rtx 8000"))

@@ -31,7 +31,7 @@
 
 (defun item-get-id (dom)
   "Gets item id."
-  (afirst (lquery:$ dom "#descItemNumber" (text))))
+  (scrape-first-text dom "#descItemNumber"))
 
 (defun item-get-name (dom)
   "Gets item title."
@@ -39,7 +39,7 @@
    (str:replace-first
     "Details about"
     ""
-    (afirst (lquery:$ dom "#itemTitle" (text))))))
+    (scrape-first-text dom "#itemTitle"))))
 
 (defun item-get-itemprops (dom)
   "Gets item properties (e.g., price, currency)"
@@ -50,7 +50,7 @@
    (remove-if-not
     (lambda (itemprop-list)
       (and
-       (not (string=  (car itemprop-list) "position"))
+       (not (string= (car itemprop-list) "position"))
        (cadr itemprop-list)))
     (lquery:$ dom "[itemprop]" (combine (attr :itemprop) (attr :content))))))
 
@@ -66,8 +66,7 @@
 (defun item-get-desc-text (dom)
   "Gets description text (not in iframe)."
   (string-trim-collapse
-   (afirst
-    (lquery:$ dom "#desc_wrapper_ctr" (text)))))
+   (scrape-first-text dom "#desc_wrapper_ctr")))
 
 (defun item-get-desc-iframe-text (dom)
   "Gets description text (from first iframe in description, if any)."
@@ -79,11 +78,11 @@
 
 (defun item-get-condition-message (dom)
   "Gets message about item condition."
-  (afirst (lquery:$ dom ".topItmCndDscMsg" (text))))
+  (scrape-first-text dom ".topItmCndDscMsg"))
 
 (defun item-get-seller-name (dom)
   "Gets seller name."
-  (str:trim (afirst (lquery:$ dom ".si-content a" (text)))))
+  (str:trim (scrape-first-text dom ".si-content a")))
 
 (defun item-get-item-location (dom)
   "Gets item location."
@@ -91,7 +90,7 @@
    (str:replace-first
     "Item location:"
     ""
-    (afirst (lquery:$ dom ".sh-loc" (text))))))
+    (scrape-first-text dom ".sh-loc"))))
 
 (defun item-get-ships-to-locations (dom)
   "Gets item ships to/excludes shipping to locations."
@@ -140,7 +139,7 @@
             (afirst (remove-if-not
                      (lambda (section)
                        (string=
-                        (afirst (lquery:$ section ".merch-title" (text)))
+                        (scrape-first-text section ".merch-title")
                         "People who viewed this item also viewed"))
                      merch-modules)))))
     (map 'vector
