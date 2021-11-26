@@ -44,7 +44,7 @@
 (defun item-get-itemprops (dom)
   "Gets item properties (e.g., price, currency)"
   (map
-   'vector
+   'list
    (lambda (itemprop-list)
      (cons (car itemprop-list) (cadr itemprop-list)))
    (remove-if-not
@@ -58,7 +58,7 @@
   "Gets specifics about this item ('Item specifics')"
   (let ((about-this-item-dom
           (lquery:$ dom "[data-testid='x-about-this-item']")))
-    (map 'vector
+    (map 'list
          (lambda (label value) (cons label value))
          (lquery:$ about-this-item-dom ".ux-labels-values__labels" (text))
          (lquery:$ about-this-item-dom ".ux-labels-values__values" (text)))))
@@ -96,7 +96,7 @@
 (defun item-get-ships-to-locations (dom)
   "Gets item ships to/excludes shipping to locations."
   (let ((ships-to
-          (map 'vector
+          (map 'list
                (lambda (s)
                  (map 'vector
                       #'identity
@@ -108,9 +108,10 @@
                          (str:trim (str:collapse-whitespaces s))
                          :limit 2)))))
                (lquery:$ dom ".sh-sLoc" (text)))))
-    (list
-     (cons "includes" (aref ships-to 0))
-     (cons "excludes" (aref ships-to 1)))))
+    (when (and (consp ships-to) (= (length ships-to) 2))
+      (list
+       (cons "includes" (car ships-to))
+       (cons "excludes" (cadr ships-to))))))
 
 (defun item-get-policies (dom)
   "Gets shipping, return, and payment policy details."
@@ -139,7 +140,7 @@
             (afirst (remove-if-not
                      (lambda (section)
                        (string=
-                        (aref (lquery:$ section ".merch-title" (text)) 0)
+                        (afirst (lquery:$ section ".merch-title" (text)))
                         "People who viewed this item also viewed"))
                      merch-modules)))))
     (map 'vector
@@ -172,7 +173,7 @@
   (let ((dom (item-dom id)))
     (and dom
          (lparallel:pmap
-          'vector
+          'list
           (lambda (getter-symbol)
             (cons
              (string-downcase
@@ -189,5 +190,5 @@
             item-get-item-location
             item-get-ships-to-locations
             item-get-policies
-            item-get-also-viewed
+            ;; item-get-also-viewed
             item-get-images)))))

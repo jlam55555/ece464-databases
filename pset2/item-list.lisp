@@ -15,7 +15,8 @@
   (let ((item-ids (delete-duplicates
     (let ((iter
             (lambda (iter seen-ids page-num acc)
-              (let* ((item-list-dom (scrape (search-query-to-url query page-num)))
+              (let* ((item-list-dom
+                       (scrape (search-query-to-url query page-num)))
                      (item-ids
                        (map 'vector
                             #'item-url-to-id
@@ -37,5 +38,10 @@
     (log:info "Got item ids: " item-ids)
     (lparallel:pmap
      'vector
-     #'item-info
+     ;; directly insert into db to avoid storing intermediately in memory
+     (lambda (id)
+       (let ((doc (alist-to-document (item-info id))))
+         (sb-thread:with-mutex (*mut*)
+           (cl-mongo:db.insert *collection-name* doc)))
+       'ok)
      item-ids)))
