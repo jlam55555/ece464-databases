@@ -1,4 +1,3 @@
-;;; TODO: change some of these names later
 (load "deps")
 (load "scraper")
 (load "item")
