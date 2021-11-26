@@ -33,4 +33,4 @@
  (lambda (query)
    (scrape-item query)
    'ok)
- '("rtx 8000" "gpu" "cpu"))
+ '("gpu" "cpu" "computer"))

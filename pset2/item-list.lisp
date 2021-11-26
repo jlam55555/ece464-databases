@@ -32,7 +32,8 @@ https://stackoverflow.com/a/13937652/2397327"
                             (range (+ page-num num-threads) :min page-num))
                            id-doms-buf))
                      (item-list-dom
-                       (aref id-doms-buf (- (mod page-num num-threads) 1)))
+                       (aref id-doms-buf
+                             (mod (+ page-num num-threads -1) num-threads)))
                        (item-ids
                         (map 'vector
                              #'item-url-to-id
