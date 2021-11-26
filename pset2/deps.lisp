@@ -18,5 +18,5 @@
 (setf dexador.connection-cache::*threads-connection-pool*
       (make-hash-table :test 'equal :synchronized t))
 
-(setf lparallel:*kernel* (lparallel:make-kernel 10))
+(setf lparallel:*kernel* (lparallel:make-kernel 50))
 

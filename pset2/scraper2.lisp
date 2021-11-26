@@ -8,6 +8,10 @@
   "Helper function to get first element of an array."
   (aref arr 0))
 
+(defun string-trim-collapse (s)
+  "Helper function to trim extra spaces in text."
+  (str:trim (str:collapse-whitespaces s)))
+
 (defun scrape (url)
   "Get the parsed DOM for the given URL, or an error value if the page
 doesn't exist."
