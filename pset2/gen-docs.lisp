@@ -5,7 +5,7 @@
 
 (atdoc:generate-html-documentation
  '(:ebay-scraper)
- "docs/"
+ "../docs/"
  :index-title "eBay web scraper to mongo"
  :heading "ebay-scraper"
  :include-slot-definitions-p t)
