@@ -23,27 +23,26 @@ otherwise."
         ""
         (afirst selections))))
 
-(defun scrape (url)
-  "Get the parsed DOM for the given URL, or an error value if the page
-doesn't exist."
-  (log:info "Scraping " url)
-  (handler-case (afirst (lquery:$ (initialize (dex:get url))))
-    (error () nil)))
-
-(defun remove-non-text (dom)
-  "Remove comments, script, style tags from DOM."
-  (let ((dom-no-comments
-          (afirst
-           (lquery-funcs:root
-            (lquery:parse-html
-             (cl-ppcre:regex-replace-all
-              "<!--(.*?)-->"
-              (lquery-funcs:serialize (lquery-funcs:node dom))
-              ""))))))
-    (lquery:$ dom-no-comments "script,style" (remove))
-    dom-no-comments))
-
 (defun scrape-remove-non-text (url)
   "Scrape and remove comments, script, style tags."
-  (let ((dom (scrape url)))
-    (and dom (remove-non-text dom))))
+  (log:info "Scraping " url)
+  (let ((req-text (handler-case
+                      (dex:get url)
+                    (error () nil))))
+    (if (and req-text (not (zerop (array-total-size req-text))))
+        (let ((dom
+                (afirst
+                 (lquery:$
+                   (initialize
+                    ;; remove comments
+                    (cl-ppcre:regex-replace-all
+                     "<!--(.*?)-->"
+                     ;; remove ascii:
+                     ;; https://programming-idioms.org/idiom/147/remove-all-non-ascii-characters/2791/lisp
+                     (remove-if-not (lambda (i) (<= 0 i 127))
+                                    req-text
+                                    :key #'char-code)
+                     ""))))))
+          (lquery:$ dom "script,style" (remove))
+          dom)
+        nil)))

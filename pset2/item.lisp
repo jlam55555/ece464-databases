@@ -51,7 +51,7 @@
            (value (cadr itemprop-list)))
        (cons key
              (if (string= key "price")
-                 (parse-float:parse-float value)
+                 (parse-float:parse-float (str:replace-all "," "" value))
                  value))))
    (remove-if-not
     (lambda (itemprop-list)

@@ -28,7 +28,8 @@ https://stackoverflow.com/a/13937652/2397327"
                            (lparallel:pmap
                             'vector
                             (lambda (page-num)
-                              (scrape (search-query-to-url query page-num)))
+                              (scrape-remove-non-text
+                               (search-query-to-url query page-num)))
                             (range (+ page-num num-threads) :min page-num))
                            id-doms-buf))
                      (item-list-dom

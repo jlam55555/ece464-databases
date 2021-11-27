@@ -2,4 +2,6 @@
 (load "ebay-scraper")
 
 (ebay-scraper:set-db-name "ece464_pset2")
-(ebay-scraper:scrape-items '("rtx 8000" "rtx 6000"))
+
+;;; gpu shenanigans
+(ebay-scraper:scrape-items '("rtx 8000" "rtx 6000" "rtx 3090" "gtx 1080" "gpu"))
