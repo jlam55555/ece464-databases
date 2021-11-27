@@ -1,12 +1,14 @@
 ;;; Package definition for ebay-scraper package
 (defpackage :ebay-scraper
-  (:documentation "Tools for scraping ebay items and sellers into a MongoDB
-database.")
+  (:documentation "Tools for scraping eBay items and sellers into a MongoDB 
+database. 
+
+@a[https://github.com/jlam55555/ece464-databases/tree/master/pset2]{Source.}")
   (:use :cl)
   (:export :set-db-name
-           :scrape-item
+   :scrape-item
            :scrape-items
-           :item-info
+   :item-info
            :seller-info))
 
 (in-package :ebay-scraper)

@@ -183,8 +183,15 @@ Seller
 
 ### Sample queries
 
-TODO
+See [`queries.js`][queries] for sample queries. These can be piped into MongoDB like so:
+
+```bash
+$ mongo localhost:27017/ece464_pset2 --quiet queries.js
+```
+
+TODO: describe queries
 
 [assignment]: ./res/pset2_assignment.md
 [res]: ./res/
 [docs]: https://jlam55555.github.io/ece464-databases
+[queries]: ./queries.js
