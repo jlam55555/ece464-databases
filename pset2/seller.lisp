@@ -58,9 +58,20 @@ shipping time, shipping charges)."
     (lambda (dsr-count) (parse-integer (str:replace-all "," "" dsr-count)))
     (lquery:$ dom ".dsr_count" (text)))))
 
+(defun datestring-to-bson (datestring)
+  "Converts a date string into "
+  (let ((date (chronicity:parse datestring)))
+    (cl-mongo:date-time
+     (local-time:timestamp-second date)
+     (local-time:timestamp-minute date)
+     (local-time:timestamp-hour date)
+     (local-time:timestamp-day date)
+     (local-time:timestamp-month date)
+     (local-time:timestamp-year date))))
+
 (defun seller-get-creation-date (dom)
   "Gets seller's creation date."
-  (chronicity:parse
+  (datestring-to-bson
    (car (cl-ppcre:all-matches-as-strings
          "(?<=Member since: )([^|]+)"
          (scrape-first-text dom "#member_info")))))
@@ -82,7 +93,7 @@ shipping time, shipping charges)."
              (funcall (symbol-function getter-symbol) dom)))
           '(seller-get-name
             seller-get-bio
-            seller-get-feedback-score
+            ;; seller-get-feedback-score
             seller-get-feedback-scores
             seller-get-feedback-ratings
             seller-get-creation-date
