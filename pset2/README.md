@@ -27,9 +27,6 @@ $ sbcl --load ~/quicklisp/setup.lisp --load driver.lisp
 
 Of course, using a purpose-built Common Lisp environment (SLIME) is a better experience than using the REPL directly.
 
-##### Compilation instructions
-TODO: https://stackoverflow.com/q/14171849/2397327
-
 ---
 
 ### Web scraping
