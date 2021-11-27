@@ -1,3 +1,5 @@
+// This list shows some sample queries on the "gpu" query.
+//
 // To execute this file:
 // $ mongo localhost:27017/ece464_pset2 queries.js
 
@@ -8,7 +10,7 @@ function dumpCursor(cursor) {
     }
 }
 
-let sellers = db.sellers;
+let sellers = db.seller_rtx_8000;
 let item = db.item_rtx_8000;
 
 print("Examining collection: " + item);
@@ -16,8 +18,8 @@ print("Examining collection: " + item);
 print("Item count:");
 printjson(item.count());
 
-print("Sellers:");
-printjson(sellers.distinct("name"));
+print("Sellers count:");
+printjson(sellers.count());
 
 print("Seller creation dates:");
 dumpCursor(sellers.aggregate([

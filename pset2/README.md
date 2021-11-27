@@ -27,7 +27,7 @@ $ sbcl --load ~/quicklisp/setup.lisp
 > (ebay-scraper:scrape-items '("rtx 8000" "gtx 1080 ti"))
 ```
 
-The documentation of the exposed functions can be found [here][docs].
+The documentation of the exposed functions can be found [here][docs]. An example script similar to the above can be found at [`driver.lisp`](./driver.lisp).
 
 Of course, using a purpose-built Common Lisp environment (SLIME) is a better experience than using the REPL directly.
 
@@ -41,7 +41,7 @@ The Common Lisp source files are packaged into the `ebay-scraper` package, but I
 
 The web scraping process begins with a search query `QUERY`, e.g., "rtx 8000". It then performs the search on eBay (`https://ebay.com/sch/i.html?_nkw=QUERY`) and retrieves a list of item ID's by scanning for links of the form `https://ebay.com/itm/ITEMID`. Pages 1, 2, ... of the paginated search are scanned for item ID's until no new ID's are returned (this is because if you use a page number larger than the last page, eBay returns the last search page.)
 
-With the list of item ID's, the corresponding item pages are scraped and the scraped info dumped into the collection `item_QUERY` in database `ece464_pset2`. The seller's page is also scraped, and the info dumped in the collection `sellers`.
+With the list of item ID's, the corresponding item pages are scraped and the scraped info dumped into the collection `item_QUERY` in database `ece464_pset2`. The seller's page is also scraped, and the info dumped in the collection `seller_QUERY`.
 
 The data fetched includes:
 

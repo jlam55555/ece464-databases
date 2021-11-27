@@ -2,6 +2,4 @@
 (load "ebay-scraper")
 
 (ebay-scraper:set-db-name "ece464_pset2")
-(ebay-scraper:scrape-items '("rtx 8000"))
-
-
+(ebay-scraper:scrape-items '("rtx 8000" "rtx 6000"))
