@@ -31,7 +31,8 @@
 
 (defun item-get-id (dom)
   "Gets item id."
-  (scrape-first-text dom "#descItemNumber"))
+  (parse-integer
+   (scrape-first-text dom "#descItemNumber")))
 
 (defun item-get-name (dom)
   "Gets item title."
@@ -46,7 +47,12 @@
   (map
    'list
    (lambda (itemprop-list)
-     (cons (car itemprop-list) (cadr itemprop-list)))
+     (let ((key (car itemprop-list))
+           (value (cadr itemprop-list)))
+       (cons key
+             (if (string= key "price")
+                 (parse-float:parse-float value)
+                 value))))
    (remove-if-not
     (lambda (itemprop-list)
       (and
