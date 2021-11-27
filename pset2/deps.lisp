@@ -1,6 +1,7 @@
 ;;; Setup dependencies for the project
 (ql:quickload
- '(:cl-mongo         ; MongoDB driver
+ '(:chronicity       ; date library
+   :cl-mongo         ; MongoDB driver
    :cl-ppcre         ; regex
    :hash-set         ; hash sets
    :log4cl           ; logging
