@@ -21,11 +21,17 @@ $ sbcl
 ##### Interactive (REPL) instructions
 The path to the quicklisp installation may have to be customized for your system.
 ```bash
-$ sbcl --load ~/quicklisp/setup.lisp --load driver.lisp
-> ; interact with scraper library here
+$ sbcl --load ~/quicklisp/setup.lisp
+> (load "ebay-scraper")
+> (ebay-scraper:set-db-name "ece464_databases")
+> (ebay-scraper:scrape-items '("rtx 8000" "gtx 1080 ti"))
 ```
 
+The documentation of the exposed functions can be found [here][docs].
+
 Of course, using a purpose-built Common Lisp environment (SLIME) is a better experience than using the REPL directly.
+
+The Common Lisp source files are packaged into the `ebay-scraper` package, but I did not have the time to set up a proper asdf package environment, so the package management details are a bit wonky.
 
 ---
 
@@ -181,3 +187,4 @@ TODO
 
 [assignment]: ./res/pset2_assignment.md
 [res]: ./res/
+[docs]: https://jlam55555.github.io/ece464-databases
