@@ -77,9 +77,10 @@ Because there may be thousands of items and sellers, the process is heavily acce
 - **Element volatility**: The element selectors are proprietary and not meant for commercial consumption, and may change at any time without notice. This may cause inconsistent/missing elements (see above), and also introduce additional material for scraping. Thus, this scraper will probably not be valid for very long without regular updates.
 - **Library idiosyncrasies**: There were several problems with the libraries that made them not work out of the box. `cl-mongo` required a manual conversion for the date type and had problems with printing documents. Since `cl-mongo` uses CL lists for BSON list types and there is no distinction between CL's `nil` and an empty list `'()`, it is also difficult to express an empty list in `cl-mongo`. `dexador` had problems with synchronization that required initializing its internal hashtable with the `:synchronized` option. `lquery` considered the content of `<style>`, `<script>`, and `<!-- -->` (comment) tags to be text; these tags had to be manually removed before taking text content.
 
-##### Future work
+##### Future work / improvements
 - **Webpage automation**: Some data was not loaded when the webpage was served, and thus could not be scraped with an ordinary HTTP-request-scraper like this one. This data is usually more-dynamic data that is likely being fetched often from some eBay API. It will be possible to fetch this data using a web automation tool such as Selenium, but this will also cause a marked performance drop.
 - **Remove nested object `_id`s**: As shown in the example below, nested documents have an extraneous `_id` field. These is caused by the manual conversion process, and can be removed.
+- **Scrape sellers in separate stage**: Instead of interleaving the scraping of items and sellers and upserting to the sellers table, the list of unique sellers can be grabbed after all the items are grabbed using `db.item_QUERY.distinct("seller-name")`, and those (distinct) sellers can be inserted all at once.
 
 ##### Sample fetched documents
 
