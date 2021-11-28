@@ -12,6 +12,5 @@
    "gpu"
    "cpu"
    "computer"
-   "thinkstation"
    "sandals"
    "crocs"))
