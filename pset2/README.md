@@ -280,13 +280,16 @@ Note that the database dump was created with the versions of `mongo` and `mongod
 
 ##### Sample queries
 
-See [`queries.js`][queries] for sample queries on the sample database. MongoDB can evaluate these, as so:
+The sample database contains several collections: each query creates a pair of collections, `item_QUERY` and `seller_QUERY` which contains information about the items and sellers related to that query.
 
+See [`queries.js`][queries], which contains several sample queries on one of the collection pairs (query = "gpu"). MongoDB can evaluate these, as so:
 ```bash
 $ mongo localhost:27017/ece464_pset2 --quiet queries.js
 ```
 
-TODO: describe queries
+The sample queries include MQL and aggregate queries, such as oldest and newest eBay account creation date for people selling GPU's, average feedback ratings, all distinct seller locations, a binned overview of the bio lengths of the sellers in characters.
+
+The output of the above command applied to the sample database dump can be found in [`res/queries_output.txt`](res/queries_output.txt).
 
 [assignment]: ./res/pset2_assignment.md
 [res]: ./res/

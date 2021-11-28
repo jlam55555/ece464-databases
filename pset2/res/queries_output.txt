@@ -1,0 +1,74 @@
+Examining collection: ece464_pset2.item_gpu
+Item count:
+3901
+Sellers count:
+1866
+Seller creation dates:
+{
+	"oldest" : ISODate("1996-08-27T05:00:00Z"),
+	"newest" : ISODate("2021-11-22T05:00:00Z")
+}
+Seller bio lengths:
+{ "count" : 1535, "bin-lower-bound" : 0 }
+{ "count" : 157, "bin-lower-bound" : 100 }
+{ "count" : 169, "bin-lower-bound" : 200 }
+{ "count" : 2, "bin-lower-bound" : 300 }
+{ "count" : 1, "bin-lower-bound" : 500 }
+{ "count" : 1, "bin-lower-bound" : 600 }
+Seller average ratings:
+{
+	"positive" : 774.7372421281216,
+	"neutral" : 7.762214983713355,
+	"negative" : 10.325190010857764
+}
+Seller average feedback ratings:
+{
+	"item-as-described" : 897.2813688212927,
+	"communication" : 912.2661596958175,
+	"shipping-time" : 922.1604562737642,
+	"shipping-charges" : 946.5330798479088
+}
+Seller locations:
+[
+	"Australia",
+	"Bulgaria",
+	"Canada",
+	"China",
+	"Croatia, Republic of",
+	"Cyprus",
+	"Denmark",
+	"Egypt",
+	"France",
+	"Germany",
+	"Greece",
+	"Hong Kong",
+	"Hungary",
+	"India",
+	"Indonesia",
+	"Ireland",
+	"Israel",
+	"Italy",
+	"Japan",
+	"Korea, South",
+	"Latvia",
+	"Lithuania",
+	"Malaysia",
+	"Morocco",
+	"Netherlands",
+	"Norway",
+	"Pakistan",
+	"Poland",
+	"Portugal",
+	"Puerto Rico",
+	"Serbia",
+	"Singapore",
+	"Spain",
+	"Sri Lanka",
+	"Sweden",
+	"Taiwan",
+	"Thailand",
+	"Ukraine",
+	"United Kingdom",
+	"United States",
+	"Vietnam"
+]
