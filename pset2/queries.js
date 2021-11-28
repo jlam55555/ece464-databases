@@ -10,8 +10,8 @@ function dumpCursor(cursor) {
     }
 }
 
-let sellers = db.seller_rtx_8000;
-let item = db.item_rtx_8000;
+let sellers = db.seller_gpu;
+let item = db.item_gpu;
 
 print("Examining collection: " + item);
 

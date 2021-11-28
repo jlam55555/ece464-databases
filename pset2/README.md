@@ -182,9 +182,90 @@ Seller
 
 ---
 
-### Sample queries
+### Querying the data
 
-See [`queries.js`][queries] for sample queries. These can be piped into MongoDB like so:
+##### Setup
+
+`driver.lisp` uses the `ebay-scraper` package to populate a sample database `ece464_pset2`. A sample database has the following attributes and is dumped to the file `res/ece464_pset2.dump.xz` (compressed with `xz`).
+```javascript
+> show collections
+item_computer
+item_cpu
+item_crocs
+item_gpu
+item_gtx_1080
+item_rtx_3090
+item_rtx_6000
+item_rtx_8000
+item_sandals
+seller_computer
+seller_cpu
+seller_crocs
+seller_gpu
+seller_gtx_1080
+seller_rtx_3090
+seller_rtx_6000
+seller_rtx_8000
+seller_sandals
+> db.stats()
+{
+  "db" : "ece464_pset2",
+  "collections" : 18,
+  "views" : 0,
+  "objects" : 30621,
+  "avgObjSize" : 6083.188694033506,
+  "dataSize" : 186273321,
+  "storageSize" : 119058432,
+  "freeStorageSize" : 20086784,
+  "indexes" : 18,
+  "indexSize" : 1789952,
+  "indexFreeStorageSize" : 843776,
+  "totalSize" : 120848384,
+  "totalFreeStorageSize" : 20930560,
+  "scaleFactor" : 1,
+  "fsUsedSize" : 232047116288,
+  "fsTotalSize" : 244097019904,
+  "ok" : 1
+}
+```
+
+The sample database dump was created using the following command:
+```bash
+$ mongodump --uri="mongodb://localhost:27017/ece464_pset2" --archive | xz >res/ece464_pset2.dump.xz
+```
+and it can be loaded using the following command:
+```bash
+$ xzcat --keep res/ece464_pset2.dump.xz | mongorestore --drop --archive
+```
+
+Note that the database dump was created with the following version of `mongo` (mongo shell) and `mongodump`:
+```bash
+$ mongo --version
+MongoDB shell version v5.0.4
+Build Info: {
+    "version": "5.0.4",
+    "gitVersion": "62a84ede3cc9a334e8bc82160714df71e7d3a29e",
+    "openSSLVersion": "OpenSSL 1.1.1l  24 Aug 2021",
+    "modules": [],
+    "allocator": "tcmalloc",
+    "environment": {
+        "distmod": "ubuntu2004",
+        "distarch": "x86_64",
+        "target_arch": "x86_64"
+    }
+}
+$ mongodump --version
+mongodump version: 100.5.1
+git version: d62df26a96814651d4e70c619b68a518dc6b048a
+Go version: go1.16.7
+   os: linux
+   arch: amd64
+   compiler: gc
+```
+
+##### Sample queries
+
+See [`queries.js`][queries] for sample queries on the sample database. MongoDB can evaluate these, as so:
 
 ```bash
 $ mongo localhost:27017/ece464_pset2 --quiet queries.js

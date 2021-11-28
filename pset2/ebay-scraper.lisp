@@ -71,7 +71,7 @@ database.
 
 (defun scrape-items (queries)
   "Scrapes a list of queries/items."
-  (lparallel:pmap
+  (map
    'vector
    (lambda (query)
      (scrape-item query)
