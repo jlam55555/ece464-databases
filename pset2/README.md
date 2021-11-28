@@ -113,12 +113,16 @@ Because there may be thousands of items and sellers, the process is heavily acce
 - **Data formats**: This was a matter of understanding the document format used in the `cl-mongo` library, and choosing what is most convenient to work with. The main confusion is with lists and vectors; `cl-mongo` only recognizes CL lists (and not vectors) as BSON vectors. There is also a problem with inserting CL date objects directly. Custom conversion methods from the scraped data and `cl-mongo`'s documents were implemented.
 - **Inconsistent/missing elements**: Some items may include items that other items do not. As a result, the inputs may be of different length or even different types between items, which may cause the program to crash if not handled correctly (especially in a language like Common Lisp, which has strong run-time typing). Care needs to be taken to validate input to prevent crashing.
 - **Element volatility**: The element selectors are proprietary and not meant for commercial consumption, and may change at any time without notice. This may cause inconsistent/missing elements (see above), and also introduce additional material for scraping. Thus, this scraper will probably not be valid for very long without regular updates.
-- **Library idiosyncrasies**: There were several problems with the libraries that made them not work out of the box. `cl-mongo` required a manual conversion for the date type and had problems with printing documents. Since `cl-mongo` uses CL lists for BSON list types and there is no distinction between CL's `nil` and an empty list `'()`, it is also difficult to express an empty list in `cl-mongo`. `dexador` had problems with synchronization that required initializing its internal hashtable with the `:synchronized` option. `lquery` considered the content of `<style>`, `<script>`, and `<!-- -->` (comment) tags to be text; these tags had to be manually removed before taking text content.
+- **Library idiosyncrasies**: There were several problems with the libraries that made them not work out of the box. `cl-mongo` required a manual conversion for the date type and had problems with printing documents. Since `cl-mongo` uses CL lists for BSON list types and there is no distinction between CL's `nil` and an empty list `'()`, it is also difficult to express an empty list in `cl-mongo`. `dexador` had problems with synchronization that required initializing its internal hashtable with the `:synchronized` option. `lquery` considered the content of `<style>`, `<script>`, and `<!-- -->` (comment) tags to be text; these tags had to be manually removed before taking text content. `lparallel` causes (random?) thread death if there are nested parallel map operations. Invalid Unicode caused `plump`/`lquery` to crash on some documents; this was fixed by removing all non-ASCII characters.
 
 ##### Future work / improvements
 - **Webpage automation**: Some data was not loaded when the webpage was served, and thus could not be scraped with an ordinary HTTP-request-scraper like this one. This data is usually more-dynamic data that is likely being fetched often from some eBay API. It will be possible to fetch this data using a web automation tool such as Selenium, but this will also cause a marked performance drop.
 - **Remove nested object `_id`s**: As shown in the example below, nested documents have an extraneous `_id` field. These is caused by the manual conversion process, and can be removed.
 - **Scrape sellers in separate stage**: Instead of interleaving the scraping of items and sellers and upserting to the sellers table, the list of unique sellers can be grabbed after all the items are grabbed using `db.item_QUERY.distinct("seller-name")`, and those (distinct) sellers can be inserted all at once.
+
+##### Videos
+
+[Video of the scraping process][video]
 
 ##### Sample fetched documents
 
@@ -295,3 +299,4 @@ The output of the above command applied to the sample database dump can be found
 [res]: ./res/
 [docs]: https://jlam55555.github.io/ece464-databases
 [queries]: ./queries.js
+[video]: http://files.lambdalambda.ninja/assets/ece464/scraping.mp4
