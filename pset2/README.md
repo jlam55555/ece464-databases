@@ -5,13 +5,51 @@
 ### Project setup
 The [assignment file][assignment] can be found in the [res][res] directory.
 
-##### Prerequisites
+##### General prerequisites
+A working installation of MongoDB must be running on localhost with no password authentication. The following version was used.
+```bash
+$ mongo --version
+MongoDB shell version v5.0.4
+Build Info: {
+    "version": "5.0.4",
+    "gitVersion": "62a84ede3cc9a334e8bc82160714df71e7d3a29e",
+    "openSSLVersion": "OpenSSL 1.1.1l  24 Aug 2021",
+    "modules": [],
+    "allocator": "tcmalloc",
+    "environment": {
+        "distmod": "ubuntu2004",
+        "distarch": "x86_64",
+        "target_arch": "x86_64"
+    }
+}
+```
+
+##### Prerequisites for the scraper
 Common Lisp (`sbcl`) and QuickLisp are required for this project. On Debian:
 ```bash
 $ apt install sbcl cl-quicklisp
 $ sbcl
 > ;;; in the SBCL REPL
 > (quicklisp-quickstart:install)
+```
+
+Note that you do not need to build the scraper to try the sample queries; a dump of sample scraped data is available as the `res/ece464_pset2.dump.xz` archive (see next section).
+
+##### Prerequisites for the sample queries
+If the data is scraped manually, then there are no extra prerequisites for this section.
+
+If loading the data from the sample database archive, the `xz` compression tool and the `mongodump`/`mongorestore` tools are required. The following versions were used to generate the archive.
+```bash
+$ xz --version
+xz (XZ Utils) 5.2.5
+liblzma 5.2.5
+$ mongodump --version
+mongodump version: 100.5.1
+git version: d62df26a96814651d4e70c619b68a518dc6b048a
+Go version: go1.16.7
+   os: linux
+   arch: amd64
+   compiler: gc
 ```
 
 ---
@@ -238,30 +276,7 @@ and it can be loaded using the following command:
 $ xzcat --keep res/ece464_pset2.dump.xz | mongorestore --drop --archive
 ```
 
-Note that the database dump was created with the following version of `mongo` (mongo shell) and `mongodump`:
-```bash
-$ mongo --version
-MongoDB shell version v5.0.4
-Build Info: {
-    "version": "5.0.4",
-    "gitVersion": "62a84ede3cc9a334e8bc82160714df71e7d3a29e",
-    "openSSLVersion": "OpenSSL 1.1.1l  24 Aug 2021",
-    "modules": [],
-    "allocator": "tcmalloc",
-    "environment": {
-        "distmod": "ubuntu2004",
-        "distarch": "x86_64",
-        "target_arch": "x86_64"
-    }
-}
-$ mongodump --version
-mongodump version: 100.5.1
-git version: d62df26a96814651d4e70c619b68a518dc6b048a
-Go version: go1.16.7
-   os: linux
-   arch: amd64
-   compiler: gc
-```
+Note that the database dump was created with the versions of `mongo` and `mongodump` listed above.
 
 ##### Sample queries
 
